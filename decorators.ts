@@ -1,6 +1,8 @@
+import { defineScopeMetadata } from "./metadata.ts";
 
 export function Scope(name: string): MethodDecorator {
     return (target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor): PropertyDescriptor => {
+        defineScopeMetadata(target, propertyKey, name);
         return descriptor;
     };
 }
