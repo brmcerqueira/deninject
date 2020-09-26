@@ -1,0 +1,6 @@
+{
+    "imports": {
+       "reflection": "https://cdn.pika.dev/@abraham/reflection@^0.7.0",
+       "testing/": "https://deno.land/std/testing/"
+    }
+ }
