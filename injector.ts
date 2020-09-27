@@ -1,7 +1,7 @@
-import { defaultTypeMetadatas, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, TypeMetadata } from "./metadata.ts";
+import { defaultTypeMetadatas, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata } from "./metadata.ts";
 
 export interface IInjector {
-    sub(...modules: any[]): IInjector 
+    sub(scope: string, ...modules: any[]): IInjector 
 }
 
 class SubInjector implements IInjector {
@@ -48,6 +48,7 @@ class SubInjector implements IInjector {
                     if (returntype) {
                         this.buildType({
                             isSingleton: getSingletonMetadata(module, key),
+                            token: getTokenMetadata(module, key),
                             target: returntype,
                             dependencies: getParamtypesMetadata(module, key)
                         });  
@@ -62,6 +63,11 @@ class SubInjector implements IInjector {
 
     protected buildType(metadata: TypeMetadata) {
         let code = this.hashCode(metadata.target);
+
+        if (metadata.token) {
+            code += `_${metadata.token}`;
+        }
+
         let dependencies = metadata.dependencies.map(this.hashCode);
 
         if (this._binds[code] && this._binds[code].depth >= this._depth) {

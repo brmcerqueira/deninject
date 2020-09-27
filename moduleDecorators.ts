@@ -1,8 +1,14 @@
-import { defineScopeMetadata, defineSingletonMetadata, pushProviderMetadata } from "./metadata.ts";
+import { defineScopeMetadata, defineSingletonMetadata, defineTokenMetadata, pushProviderMetadata } from "./metadata.ts";
 
 export function Scope(name: string): MethodDecorator {
     return (target: Object, propertyKey: string | symbol) => {
         defineScopeMetadata(target, propertyKey, name);      
+    };
+}
+
+export function Token(name: string): MethodDecorator {
+    return (target: Object, propertyKey: string | symbol) => {
+        defineTokenMetadata(target, propertyKey, name);      
     };
 }
 

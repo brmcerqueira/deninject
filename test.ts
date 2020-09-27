@@ -1,14 +1,16 @@
 import { assertEquals, assert } from "testing/asserts.ts";
 import * as cls from "./classDecorators.ts";
-import { Scope, Singleton, Transient } from "./moduleDecorators.ts";
+import { Scope, Singleton, Token, Transient } from "./moduleDecorators.ts";
 import { Injector } from "./injector.ts";
 import { getScopeMetadata, getSingletonMetadata } from "./metadata.ts";
 
 export class A {}
 export class B {}
+export class D {}
 
 @cls.Singleton()
 @cls.Scope("scopeC")
+@cls.Token("tokenC")
 export class C {
     constructor(b: B) {
 
@@ -18,7 +20,6 @@ export class C {
 export class TestModule {
     @Singleton()
     @Scope("scopeA")
-
     public buildA(): A {
         return new A()
     }
@@ -27,6 +28,12 @@ export class TestModule {
     @Scope("scopeB")
     public buildB(a: A): B {
         return new B()
+    }
+
+    @Singleton()
+    @Token("tokenD")
+    public buildD(): D {
+        return new D()
     }
 }
 
