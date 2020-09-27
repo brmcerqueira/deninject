@@ -1,4 +1,5 @@
 import { getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata } from "./metadata.ts";
+import { defaultTypeMetadatas, TypeMetadata } from "./typeMetadata.ts";
 
 type Bind = {
     depth: number,
@@ -18,58 +19,86 @@ type Scope = {
 
 type Scopes = { 
     [key: string]: Scope
-};
+}
 
-export class Injector {
-    private _depth: number = 1;
-    private _scopes: Scopes;
+export interface IInjector {
+    sub(...modules: any[]): IInjector 
+}
 
-    constructor(...modules: any[]) {
-        this._scopes = {
-            __default__: this.createScope({})
-        };
-        this.putModules(modules); 
-    }
+class SubInjector implements IInjector {
+    protected _depth: number = 1;
+    protected _scopes: Scopes = {
+        __default__: this.createScope({})
+    };
 
-    private copy(injector: Injector) {
-        this._depth = injector._depth + 1;
-        for (const scope in injector._scopes) {
-            const injectorBinds = injector._scopes[scope].binds;
-            let binds: Binds = {}
-
-            for (const bind in injectorBinds) {
-                binds[bind] = {
-                    depth: this._depth,
-                    get: injectorBinds[bind].get
+    protected constructor(parent: SubInjector | null, modules: any[]) {
+        if (parent) {
+            this._depth += parent._depth;
+            for (const scope in parent._scopes) {
+                const injectorBinds = parent._scopes[scope].binds;
+                let binds: Binds = {}
+    
+                for (const bind in injectorBinds) {
+                    binds[bind] = {
+                        depth: this._depth,
+                        get: injectorBinds[bind].get
+                    }
                 }
+    
+                this._scopes[scope] = this.createScope(binds)
             }
-
-            this._scopes[scope] = this.createScope(binds)
         }
-    }
-
-    private putModules(modules: any[]) {
+        else {
+            defaultTypeMetadatas.forEach(this.buildType);
+        }
+        
         modules.forEach(module => {
             getProviderMetadata(module).forEach(key => {
-                let scopeMetadata = getScopeMetadata(module, key);
-                
-                if (scopeMetadata) {
-                    if (!this._scopes[scopeMetadata]) {                   
-                        this._scopes[scopeMetadata] = this.createScope({});
-                    }                              
-                }
-                else {
-                    scopeMetadata = "__default__";
-                }
-
-                let scope = this._scopes[scopeMetadata];
-
-                let isSingleton = getSingletonMetadata(module, key);
-                console.log(getReturntypeMetadata(module, key)?.toString());
-                console.log(getParamtypesMetadata(module, key));  
+                let returntype = getReturntypeMetadata(module, key);
+                if (returntype) {
+                    this.buildType({
+                        scope: getScopeMetadata(module, key),
+                        isSingleton: getSingletonMetadata(module, key),
+                        target: returntype,
+                        dependencies: getParamtypesMetadata(module, key)
+                    });  
+                }         
             })
         });
+
         console.log(this._scopes);
+    }
+
+    protected buildType(metadata: TypeMetadata) {     
+        let metadataScope = metadata.scope;         
+        if (metadataScope) {
+            if (!this._scopes[metadataScope]) {                   
+                this._scopes[metadataScope] = this.createScope({});
+            }                              
+        }
+        else {
+            metadataScope = "__default__";
+        }
+
+        let scope = this._scopes[metadataScope];
+
+        console.log(this.hashCode(metadata.target));
+        console.log(metadata.dependencies);  
+    }
+
+    private hashCode(func: Function): string {
+        let value = func.toString();
+        let hash = 0; 
+        let length = value.length; 
+        let i = 0;
+    
+        if (length > 0){   
+            while (i < length) {  
+                hash = (hash << 5) - hash + value.charCodeAt(i++) | 0;
+            }
+        }
+    
+        return hash.toString();
     }
 
     private createScope(binds: Binds): Scope {
@@ -79,10 +108,13 @@ export class Injector {
         }
     }
 
-    public sub(...modules: any[]): Injector {
-        let injector = new Injector();      
-        injector.copy(this);
-        injector.putModules(modules);
-        return injector;
+    public sub(...modules: any[]): IInjector {
+        return new SubInjector(this, modules);
+    }
+}
+
+export class Injector extends SubInjector {
+    constructor(...modules: any[]) {
+        super(null, modules);
     }
 }

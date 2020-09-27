@@ -6,29 +6,12 @@ const deninjectScope = "deninject:scope";
 const deninjectSingleton = "deninject:singleton";
 const deninjectProvider = "deninject:provider";
 
-function hashCode(func: Function): string {
-    let value = func.toString();
-    let hash = 0; 
-    let length = value.length; 
-    let i = 0;
-
-    if (length > 0){   
-        while (i < length) {  
-            hash = (hash << 5) - hash + value.charCodeAt(i++) | 0;
-        }
-    }
-
-    return hash.toString();
-};
-
-export function getParamtypesMetadata(target: any, targetKey: string | symbol): string[] | undefined {
-    let paramtypes: Function[] | undefined = getMetadata(designParamtypes, target, targetKey);
-    return paramtypes ? paramtypes.map(hashCode) : undefined;
+export function getParamtypesMetadata(target: any, targetKey: string | symbol): Function[] {
+    return getMetadata(designParamtypes, target, targetKey) || [];
 }
 
-export function getReturntypeMetadata(target: any, targetKey: string | symbol): string | undefined {
-    let returntype: Function | undefined = getMetadata(designReturntype, target, targetKey);
-    return returntype ? hashCode(returntype) : undefined;
+export function getReturntypeMetadata(target: any, targetKey: string | symbol): Function | null {
+    return getMetadata(designReturntype, target, targetKey) || null;
 }
 
 export function getScopeMetadata(target: any, targetKey: string | symbol): string | undefined {
