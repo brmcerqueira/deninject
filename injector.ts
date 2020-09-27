@@ -69,19 +69,21 @@ class SubInjector implements IInjector {
             code = this.tokenFormat(code, metadata.token);
         }
 
-        let dependencies = metadata.dependencies.map(this.hashCode);
+        let dependencies = metadata.dependencies.map((func, index) => {
+            let key = this.hashCode(func);
+            return metadata.inject ? this.tokenFormat(key, metadata.inject[index]) : key;
+        });
 
         if (this._binds[code] && this._binds[code].depth >= this._depth) {
             throw new Error(`Bind already defined for '${metadata.target}'.`);
         }
         else {
-            dependencies.forEach((d, i) => {
-                let key = this.resolveDependencyKey(d, i, metadata.inject);
+            dependencies.forEach((key, index) => {
                 if (!this._binds[key]) {
                     this._binds[key] = {
                         depth: 0,
                         get(): any {
-                            throw new Error(`Bind not found for '${metadata.dependencies[i]}'.`);
+                            throw new Error(`Bind not found for '${metadata.dependencies[index]}'.`);
                         }
                     }
                 }
@@ -89,7 +91,7 @@ class SubInjector implements IInjector {
 
             let resolve = (): any => {
                 return metadata.target.apply(Object.create(metadata.target.prototype), 
-                dependencies.map((d, i) => this._binds[this.resolveDependencyKey(d, i, metadata.inject)].get()));
+                dependencies.map(key => this._binds[key].get()));
             };
 
             this._binds[code] = {
@@ -106,10 +108,6 @@ class SubInjector implements IInjector {
                 } : resolve
             }
         }
-    }
-
-    private resolveDependencyKey(code: string, index: number, inject: InjectMetadata | undefined): string {
-        return inject ? this.tokenFormat(code, inject[index]) : code;
     }
 
     private tokenFormat(code: string, token: string): string {
