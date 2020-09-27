@@ -1,4 +1,4 @@
-import { defaultTypeMetadatas, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata } from "./metadata.ts";
+import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, InjectMetadata } from "./metadata.ts";
 
 export interface IInjector {
     sub(scope: string, ...modules: any[]): IInjector 
@@ -30,11 +30,11 @@ class SubInjector implements IInjector {
             }
         }
 
-        console.log(defaultTypeMetadatas);
+        console.log(nonModulesMetadata);
 
-        for (const key in defaultTypeMetadatas) {
+        for (const key in nonModulesMetadata) {
             if (key == "__root__" || (scope && key == scope)) {
-                defaultTypeMetadatas[key].forEach(metadata => {
+                nonModulesMetadata[key].forEach(metadata => {
                     this.buildType(metadata); 
                 });
             }       
@@ -50,7 +50,8 @@ class SubInjector implements IInjector {
                             isSingleton: getSingletonMetadata(module, key),
                             token: getTokenMetadata(module, key),
                             target: returntype,
-                            dependencies: getParamtypesMetadata(module, key)
+                            dependencies: getParamtypesMetadata(module, key),
+                            inject: getInjectMetadata(module, key)
                         });  
                     } 
                 }              
@@ -65,7 +66,7 @@ class SubInjector implements IInjector {
         let code = this.hashCode(metadata.target);
 
         if (metadata.token) {
-            code += `_${metadata.token}`;
+            code = this.tokenFormat(code, metadata.token);
         }
 
         let dependencies = metadata.dependencies.map(this.hashCode);
@@ -75,8 +76,9 @@ class SubInjector implements IInjector {
         }
         else {
             dependencies.forEach((d, i) => {
-                if (!this._binds[d]) {
-                    this._binds[d] = {
+                let key = this.resolveDependencyKey(d, i, metadata.inject);
+                if (!this._binds[key]) {
+                    this._binds[key] = {
                         depth: 0,
                         get(): any {
                             throw new Error(`Bind not found for '${metadata.dependencies[i]}'.`);
@@ -87,7 +89,7 @@ class SubInjector implements IInjector {
 
             let resolve = (): any => {
                 return metadata.target.apply(Object.create(metadata.target.prototype), 
-                dependencies.map(d => this._binds[d].get()));
+                dependencies.map((d, i) => this._binds[this.resolveDependencyKey(d, i, metadata.inject)].get()));
             };
 
             this._binds[code] = {
@@ -104,6 +106,14 @@ class SubInjector implements IInjector {
                 } : resolve
             }
         }
+    }
+
+    private resolveDependencyKey(code: string, index: number, inject: InjectMetadata | undefined): string {
+        return inject ? this.tokenFormat(code, inject[index]) : code;
+    }
+
+    private tokenFormat(code: string, token: string): string {
+        return `${code}_${token}`;
     }
 
     private hashCode(func: Function): string {

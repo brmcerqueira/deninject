@@ -4,18 +4,24 @@ const designParamtypes = "design:paramtypes";
 const designReturntype = "design:returntype";
 const deninjectScope = "deninject:scope";
 const deninjectToken = "deninject:token";
+const deninjectInject = "deninject:inject";
 const deninjectSingleton = "deninject:singleton";
 const deninjectProvider = "deninject:provider";
 const deninjectLock = "deninject:lock";
+
+export type InjectMetadata = {
+    [key: number]: string
+}
 
 export type TypeMetadata = {
     isSingleton: boolean,
     token?: string, 
     target: Function, 
-    dependencies: Function[]
+    dependencies: Function[],
+    inject?: InjectMetadata
 }
 
-export const defaultTypeMetadatas: {                
+export const nonModulesMetadata: {                
     [key: string]: TypeMetadata[]
 } = {
     __root__: []
@@ -51,6 +57,10 @@ export function getTokenMetadata(target: any, targetKey: string | symbol): strin
 
 export function getSingletonMetadata(target: any, targetKey: string | symbol): boolean {
     return getMetadata(deninjectSingleton, target, targetKey) || false;
+}
+
+export function getInjectMetadata(target: any, targetKey?: string | symbol): InjectMetadata | undefined {
+    return getMetadata(deninjectInject, target, targetKey);
 }
 
 export function getProviderMetadata(target: any): (string | symbol)[] {
@@ -93,6 +103,17 @@ export function defineSingletonMetadata(target: any, targetKey: string | symbol)
     defineMetadata(deninjectSingleton, true, target, targetKey);
 }
 
+export function pushInjectMetadata(target: any, targetKey: string | symbol | undefined, parameterIndex: number, value: string) {
+    let injectMetadata = getInjectMetadata(target, targetKey);
+
+    if (!injectMetadata) {
+        injectMetadata = {};
+        defineMetadata(deninjectInject, injectMetadata, target, targetKey);
+    }
+
+    injectMetadata[parameterIndex] = value;
+}
+
 export function pushProviderMetadata(target: any, targetKey: string | symbol) {
     let providers: (string | symbol)[] | undefined = getMetadata(deninjectProvider, target);
     if (providers) {
@@ -113,17 +134,18 @@ export function pushClassMetadata(target: any, isSingleton: boolean) {
     let scope: string | undefined = getMetadata(deninjectScope, target);
 
     if (scope) {
-        defaultTypeMetadatas[scope] = [];
+        nonModulesMetadata[scope] = [];
     }
     else {
         scope = "__root__";
     }
 
-    defaultTypeMetadatas[scope].push({
+    nonModulesMetadata[scope].push({
         isSingleton: isSingleton,
         token: getMetadata(deninjectToken, target),
         target: target,
-        dependencies: getMetadata(designParamtypes, target) || []
+        dependencies: getMetadata(designParamtypes, target) || [],
+        inject: getInjectMetadata(target)
     }); 
 
     defineMetadata(deninjectLock, true, target);
