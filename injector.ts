@@ -39,21 +39,24 @@ class SubInjector implements IInjector {
         for (const key in defaultTypeMetadatas) {
             if (key == "__root__" || (scope && key == scope)) {
                 defaultTypeMetadatas[key].forEach(metadata => {
-                    this.buildType(metadata, key); 
+                    this.buildType(metadata); 
                 });
             }       
         }
         
         modules.forEach(module => {
-            getProviderMetadata(module).forEach(key => {
-                let returntype = getReturntypeMetadata(module, key);
-                if (returntype) {
-                    this.buildType({
-                        isSingleton: getSingletonMetadata(module, key),
-                        target: returntype,
-                        dependencies: getParamtypesMetadata(module, key)
-                    }, getScopeMetadata(module, key));  
-                }         
+            getProviderMetadata(module).forEach(key => {    
+                let scopeMetadata = getScopeMetadata(module, key);        
+                if (scopeMetadata == undefined || (scope && scopeMetadata == scope)) {
+                    let returntype = getReturntypeMetadata(module, key);
+                    if (returntype) {
+                        this.buildType({
+                            isSingleton: getSingletonMetadata(module, key),
+                            target: returntype,
+                            dependencies: getParamtypesMetadata(module, key)
+                        });  
+                    } 
+                }              
             })
         });
 
@@ -61,8 +64,7 @@ class SubInjector implements IInjector {
         console.log(this._binds);
     }
 
-    protected buildType(metadata: TypeMetadata, scope?: string) {     
-        console.log(scope);
+    protected buildType(metadata: TypeMetadata) {
         console.log(this.hashCode(metadata.target));
         console.log(metadata.dependencies.map(this.hashCode));  
     }
