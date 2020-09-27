@@ -1,14 +1,5 @@
 import { defaultTypeMetadatas, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, TypeMetadata } from "./metadata.ts";
 
-type Bind = {
-    depth: number,
-    get(): any
-}
-
-type Binds = {
-    [key: string]: Bind
-}  
-
 export interface IInjector {
     sub(...modules: any[]): IInjector 
 }
@@ -20,7 +11,12 @@ class SubInjector implements IInjector {
         [key: string]: any
     } = {};
 
-    protected _binds: Binds = {};
+    protected _binds: {
+        [key: string]: {
+            depth: number,
+            get(): any
+        }
+    } = {};
 
     protected constructor(scope: string | null, parent: SubInjector | null, modules: any[]) {
         if (parent) {
@@ -65,8 +61,43 @@ class SubInjector implements IInjector {
     }
 
     protected buildType(metadata: TypeMetadata) {
-        console.log(this.hashCode(metadata.target));
-        console.log(metadata.dependencies.map(this.hashCode));  
+        let code = this.hashCode(metadata.target);
+        let dependencies = metadata.dependencies.map(this.hashCode);
+
+        if (this._binds[code] && this._binds[code].depth >= this._depth) {
+            throw new Error(`Bind already defined for '${metadata.target}'.`);
+        }
+        else {
+            dependencies.forEach((d, i) => {
+                if (!this._binds[d]) {
+                    this._binds[d] = {
+                        depth: 0,
+                        get(): any {
+                            throw new Error(`Bind not found for '${metadata.dependencies[i]}'.`);
+                        }
+                    }
+                }
+            });
+
+            let resolve = (): any => {
+                return metadata.target.apply(Object.create(metadata.target.prototype), 
+                dependencies.map(d => this._binds[d].get()));
+            };
+
+            this._binds[code] = {
+                depth: this._depth,
+                get: metadata.isSingleton ? (): any => {
+                    if (this._cache[code]) {
+                        return this._cache[code];
+                    }
+                    else {
+                        let value = resolve();
+                        this._cache[code] = value;
+                        return value;
+                    }
+                } : resolve
+            }
+        }
     }
 
     private hashCode(func: Function): string {
