@@ -2,14 +2,14 @@ import { defineScopeMetadata, defineSingletonMetadata, pushProviderMetadata } fr
 
 export function Scope(name: string): MethodDecorator {
     return (target: Object, propertyKey: string | symbol) => {
-        defineScopeMetadata(target, propertyKey, name);
+        defineScopeMetadata(target, propertyKey, name);      
     };
 }
 
 export function Singleton(): MethodDecorator {
     return (target: Object, propertyKey: string | symbol) => {
         defineSingletonMetadata(target, propertyKey);
-        pushProviderMetadata(target, propertyKey);
+        pushProviderMetadata(target, propertyKey);   
     };
 }
 

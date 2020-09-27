@@ -1,5 +1,4 @@
-import { getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata } from "./metadata.ts";
-import { defaultTypeMetadatas, TypeMetadata } from "./typeMetadata.ts";
+import { defaultTypeMetadatas, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, TypeMetadata } from "./metadata.ts";
 
 type Bind = {
     depth: number,
@@ -10,46 +9,39 @@ type Binds = {
     [key: string]: Bind
 }  
 
-type Scope = {
-    cache: {                
-        [key: string]: any
-    },
-    binds: Binds          
-}
-
-type Scopes = { 
-    [key: string]: Scope
-}
-
 export interface IInjector {
     sub(...modules: any[]): IInjector 
 }
 
 class SubInjector implements IInjector {
     protected _depth: number = 1;
-    protected _scopes: Scopes = {
-        __default__: this.createScope({})
-    };
 
-    protected constructor(parent: SubInjector | null, modules: any[]) {
+    protected _cache: {                
+        [key: string]: any
+    } = {};
+
+    protected _binds: Binds = {};
+
+    protected constructor(scope: string | null, parent: SubInjector | null, modules: any[]) {
         if (parent) {
             this._depth += parent._depth;
-            for (const scope in parent._scopes) {
-                const injectorBinds = parent._scopes[scope].binds;
-                let binds: Binds = {}
-    
-                for (const bind in injectorBinds) {
-                    binds[bind] = {
-                        depth: this._depth,
-                        get: injectorBinds[bind].get
-                    }
+
+            for (const bind in parent._binds) {
+                this._binds[bind] = {
+                    depth: this._depth,
+                    get: parent._binds[bind].get
                 }
-    
-                this._scopes[scope] = this.createScope(binds)
             }
         }
-        else {
-            defaultTypeMetadatas.forEach(this.buildType);
+
+        console.log(defaultTypeMetadatas);
+
+        for (const key in defaultTypeMetadatas) {
+            if (key == "__root__" || (scope && key == scope)) {
+                defaultTypeMetadatas[key].forEach(metadata => {
+                    this.buildType(metadata, key); 
+                });
+            }       
         }
         
         modules.forEach(module => {
@@ -57,33 +49,22 @@ class SubInjector implements IInjector {
                 let returntype = getReturntypeMetadata(module, key);
                 if (returntype) {
                     this.buildType({
-                        scope: getScopeMetadata(module, key),
                         isSingleton: getSingletonMetadata(module, key),
                         target: returntype,
                         dependencies: getParamtypesMetadata(module, key)
-                    });  
+                    }, getScopeMetadata(module, key));  
                 }         
             })
         });
 
-        console.log(this._scopes);
+        console.log(this._cache);
+        console.log(this._binds);
     }
 
-    protected buildType(metadata: TypeMetadata) {     
-        let metadataScope = metadata.scope;         
-        if (metadataScope) {
-            if (!this._scopes[metadataScope]) {                   
-                this._scopes[metadataScope] = this.createScope({});
-            }                              
-        }
-        else {
-            metadataScope = "__default__";
-        }
-
-        let scope = this._scopes[metadataScope];
-
+    protected buildType(metadata: TypeMetadata, scope?: string) {     
+        console.log(scope);
         console.log(this.hashCode(metadata.target));
-        console.log(metadata.dependencies);  
+        console.log(metadata.dependencies.map(this.hashCode));  
     }
 
     private hashCode(func: Function): string {
@@ -101,20 +82,13 @@ class SubInjector implements IInjector {
         return hash.toString();
     }
 
-    private createScope(binds: Binds): Scope {
-        return {
-            cache: {},
-            binds: binds
-        }
-    }
-
-    public sub(...modules: any[]): IInjector {
-        return new SubInjector(this, modules);
+    public sub(scope: string, ...modules: any[]): IInjector {
+        return new SubInjector(scope, this, modules);
     }
 }
 
 export class Injector extends SubInjector {
     constructor(...modules: any[]) {
-        super(null, modules);
+        super(null, null, modules);
     }
 }

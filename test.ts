@@ -1,20 +1,30 @@
 import { assertEquals, assert } from "testing/asserts.ts";
-import { Scope, Singleton, Transient } from "./decorators.ts";
+import * as cls from "./classDecorators.ts";
+import { Scope, Singleton, Transient } from "./moduleDecorators.ts";
 import { Injector } from "./injector.ts";
 import { getScopeMetadata, getSingletonMetadata } from "./metadata.ts";
 
 export class A {}
 export class B {}
 
+@cls.Singleton()
+@cls.Scope("scopeC")
+export class C {
+    constructor(b: B) {
+
+    }
+}
+
 export class TestModule {
-    @Scope("scopeA")
     @Singleton()
+    @Scope("scopeA")
+
     public buildA(): A {
         return new A()
     }
 
-    @Scope("scopeB")
     @Transient()
+    @Scope("scopeB")
     public buildB(a: A): B {
         return new B()
     }
