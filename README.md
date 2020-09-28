@@ -56,7 +56,7 @@ The decorators are responsible for making all the configuration of the dependenc
 
 ### Transient
 
-The decorator 'Transient' serves to mark a class or method of a module as a transient, this means that the 'Injector' will generate a new instance for each request.
+The decorator `Transient` serves to mark a class or method of a module as a transient, this means that the `Injector` will generate a new instance for each request.
 
 As a class:
 ```ts
@@ -78,7 +78,7 @@ class MyModule {
 
 ### Singleton
 
-The decorator 'Singleton' serves to mark a class or method of a module as a singleton, this means that the 'Injector' will generate just one instance and store it in the cache, each request will return the same instance.
+The decorator `Singleton` serves to mark a class or method of a module as a singleton, this means that the `Injector` will generate just one instance and store it in the cache, each request will return the same instance.
 
 As a class:
 ```ts
@@ -100,7 +100,7 @@ class MyModule {
 
 ### Scope
 
-The decorator 'Scope' is used to mark a class or method of a module with a specific scope, this is useful for specific configurations for the 'SubInjectors'. Every 'SubInjector' works with a specific scope.
+The decorator `Scope` is used to mark a class or method of a module with a specific scope, this is useful for specific configurations for the `SubInjectors`. Every `SubInjector` works with a specific scope.
 
 As a class:
 ```ts
@@ -130,7 +130,7 @@ const a = subInjector.get(ClassA);
 
 ### Token
 
-The 'Token' decorator is used to mark a class or method of a module with a specific token, this is useful for creating different constructors for the same class.
+The `Token` decorator is used to mark a class or method of a module with a specific token, this is useful for creating different constructors for the same class.
 
 As a class:
 ```ts
