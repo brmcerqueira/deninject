@@ -1,7 +1,14 @@
 import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, InjectMetadata } from "./metadata.ts";
 
 export interface IInjector {
+    get<T>(identity: T): T;
     sub(scope: string, ...modules: any[]): IInjector 
+}
+
+class BindError extends Error {
+    constructor(identity: any) {
+       super(`Bind not found for '${identity}'.`);
+    }
 }
 
 class SubInjector implements IInjector {
@@ -51,7 +58,11 @@ class SubInjector implements IInjector {
                             token: getTokenMetadata(module, key),
                             target: returntype,
                             dependencies: getParamtypesMetadata(module, key),
-                            inject: getInjectMetadata(module, key)
+                            inject: getInjectMetadata(module, key),
+                            create(args: any[]): any {
+                                let func: Function = module[key];
+                                return func.call(module, args);
+                            }
                         });  
                     } 
                 }              
@@ -83,15 +94,14 @@ class SubInjector implements IInjector {
                     this._binds[key] = {
                         depth: 0,
                         get(): any {
-                            throw new Error(`Bind not found for '${metadata.dependencies[index]}'.`);
+                            throw new BindError(metadata.dependencies[index]);
                         }
                     }
                 }
             });
 
             let resolve = (): any => {
-                return metadata.target.apply(Object.create(metadata.target.prototype), 
-                dependencies.map(key => this._binds[key].get()));
+                return metadata.create(dependencies.map(key => this._binds[key].get()));
             };
 
             this._binds[code] = {
@@ -114,8 +124,8 @@ class SubInjector implements IInjector {
         return `${code}_${token}`;
     }
 
-    private hashCode(func: Function): string {
-        let value = func.toString();
+    private hashCode(obj: Object): string {
+        let value = obj.toString();
         let hash = 0; 
         let length = value.length; 
         let i = 0;
@@ -127,6 +137,17 @@ class SubInjector implements IInjector {
         }
     
         return hash.toString();
+    }
+
+    public get<T>(identity: T, token?: string): T {
+        let code = this.hashCode(identity);
+        let bind = this._binds[token ? this.tokenFormat(code, token) : code];
+
+        if (!bind) {
+            throw new BindError(identity);
+        }
+
+        return bind.get();
     }
 
     public sub(scope: string, ...modules: any[]): IInjector {

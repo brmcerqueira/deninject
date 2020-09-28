@@ -10,22 +10,22 @@ export class B {}
 export class D {}
 
 @cls.Singleton()
-@cls.Token("tokenC")
 export class C {
-    constructor(@Inject("parB") b: B) {
-
+    constructor(a: A) {
+        console.log("Class C!", a);
     }
 }
 
 export class TestModule {
     @Singleton()
-    @Scope("scopeA")
     public buildA(): A {
+        console.log("buildA");
         return new A()
     }
 
     @Transient()
-    public buildB(@Inject("parA") a: A): B {
+    public buildB(c: C): B {
+        console.log("buildB: ", c);
         return new B()
     }
 
@@ -40,7 +40,7 @@ Deno.test({
     name: "scope and singleton decorator",
     fn() {
         const testModule = new TestModule();
-        assertEquals("scopeA", getScopeMetadata(testModule, "buildA"));
+        //assertEquals("scopeA", getScopeMetadata(testModule, "buildA"));
         assert(getSingletonMetadata(testModule, "buildA"));
     },
 });
@@ -58,5 +58,6 @@ Deno.test({
     fn() {
         const testModule = new TestModule();      
         const injector = new Injector(testModule);
+        const b = injector.get(B);
     },
 });

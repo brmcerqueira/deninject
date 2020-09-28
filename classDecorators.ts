@@ -1,25 +1,25 @@
 import { defineClassScopeMetadata, defineClassTokenMetadata, pushClassMetadata } from "./metadata.ts";
 
 export function Scope(name: string): ClassDecorator {
-    return (target: Object) => {
+    return (target: Function) => {
         defineClassScopeMetadata(target, name);      
     };
 }
 
 export function Token(name: string): ClassDecorator {
-    return (target: Object) => {
+    return (target: Function) => {
         defineClassTokenMetadata(target, name);      
     };
 }
 
 export function Singleton(): ClassDecorator {
-    return (target: Object) => {
+    return (target: Function) => {
         pushClassMetadata(target, true);   
     };
 }
 
 export function Transient(): ClassDecorator {
-    return (target: Object) => {
+    return (target: Function) => {
         pushClassMetadata(target, false);
     };
 }

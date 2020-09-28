@@ -16,7 +16,8 @@ export type InjectMetadata = {
 export type TypeMetadata = {
     isSingleton: boolean,
     token?: string, 
-    target: Function, 
+    target: Function,
+    create(args: any[]): any, 
     dependencies: Function[],
     inject?: InjectMetadata
 }
@@ -130,7 +131,7 @@ export function pushProviderMetadata(target: any, targetKey: string | symbol) {
     defineMetadata(deninjectLock, true, target, targetKey);
 }
 
-export function pushClassMetadata(target: any, isSingleton: boolean) {
+export function pushClassMetadata(target: Function, isSingleton: boolean) {
     let scope: string | undefined = getMetadata(deninjectScope, target);
 
     if (scope) {
@@ -145,7 +146,11 @@ export function pushClassMetadata(target: any, isSingleton: boolean) {
         token: getMetadata(deninjectToken, target),
         target: target,
         dependencies: getMetadata(designParamtypes, target) || [],
-        inject: getInjectMetadata(target)
+        inject: getInjectMetadata(target),
+        create(args: any[]): any {
+            let constructor: ObjectConstructor = target.prototype.constructor;
+            return new constructor(args);
+        }
     }); 
 
     defineMetadata(deninjectLock, true, target);
