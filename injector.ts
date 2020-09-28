@@ -86,7 +86,7 @@ class SubInjector implements IInjector {
         });
 
         if (this._binds[id] && this._binds[id].depth >= this._depth) {
-            throw new Error(`Bind already defined for '${metadata.target}'.`);
+            throw new Error(`Bind already defined for '${(<any>metadata.target).name}'.`);
         }
         else {
             dependencies.forEach((key, index) => {
