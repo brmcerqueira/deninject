@@ -1,9 +1,9 @@
 import { assertEquals, assert } from "testing/asserts.ts";
-import * as cls from "./classDecorators.ts";
-import { Scope, Singleton, Token, Transient } from "./moduleDecorators.ts";
-import { Injector } from "./injector.ts";
-import { getScopeMetadata, getSingletonMetadata } from "./metadata.ts";
-import { Inject } from "./inject.ts";
+import * as cls from "../decorators/forClasses.ts";
+import { Scope, Singleton, Token, Transient } from "../decorators/forModules.ts";
+import { Inject } from "../decorators/inject.ts";
+import { Injector } from "../injector.ts";
+import { getScopeMetadata, getSingletonMetadata } from "../reflections/metadata.ts";
 
 export class A {}
 export class B {}

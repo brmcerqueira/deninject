@@ -1,4 +1,4 @@
-import { defineScopeMetadata, defineSingletonMetadata, defineTokenMetadata, pushProviderMetadata } from "./metadata.ts";
+import { defineScopeMetadata, defineSingletonMetadata, defineTokenMetadata, pushProviderMetadata } from "../reflections/metadata.ts";
 
 export function Scope(name: string): MethodDecorator {
     return (target: Object, propertyKey: string | symbol) => {

@@ -1,4 +1,4 @@
-import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, InjectMetadata } from "./metadata.ts";
+import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata } from "./reflections/metadata.ts";
 
 export interface IInjector {
     get<T>(identity: T): T;

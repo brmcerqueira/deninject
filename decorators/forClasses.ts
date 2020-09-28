@@ -1,4 +1,4 @@
-import { defineClassScopeMetadata, defineClassTokenMetadata, pushClassMetadata } from "./metadata.ts";
+import { defineClassScopeMetadata, defineClassTokenMetadata, pushClassMetadata } from "../reflections/metadata.ts";
 
 export function Scope(name: string): ClassDecorator {
     return (target: Function) => {
