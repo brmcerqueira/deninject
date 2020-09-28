@@ -9,24 +9,24 @@ const tokenA = "tokenA";
 
 @Transient()
 @Scope(scopeA)
-class ClassesScopeDecoratorA {}
+class A {}
 
 @Singleton()
-class ClassesScopeDecoratorB {}
+class B {}
 
 @Transient()
-class ClassesScopeDecoratorC {}
+class C {}
 
 @Transient()
 @Token(tokenA)
-class ClassesScopeDecoratorD {}
+class D {}
 
 Deno.test({
     name: "classes scope decorator",
     fn() {
         const typeMetadata = nonModulesMetadata[scopeA];
         assert(typeMetadata);
-        assertNotEquals(typeMetadata.filter(m => m.target == ClassesScopeDecoratorA).length, 0);
+        assertNotEquals(typeMetadata.filter(m => m.target == A).length, 0);
     }
 });
 
@@ -35,7 +35,7 @@ Deno.test({
     fn() {
         const typeMetadata = nonModulesMetadata[scopeRoot];
         assert(typeMetadata);
-        assertNotEquals(typeMetadata.filter(m => m.target == ClassesScopeDecoratorB && m.isSingleton).length, 0);
+        assertNotEquals(typeMetadata.filter(m => m.target == B && m.isSingleton).length, 0);
     }
 });
 
@@ -44,7 +44,7 @@ Deno.test({
     fn() {
         const typeMetadata = nonModulesMetadata[scopeRoot];
         assert(typeMetadata);
-        assertNotEquals(typeMetadata.filter(m => m.target == ClassesScopeDecoratorC).length, 0);
+        assertNotEquals(typeMetadata.filter(m => m.target == C).length, 0);
     }
 });
 
@@ -53,6 +53,6 @@ Deno.test({
     fn() {
         const typeMetadata = nonModulesMetadata[scopeRoot];
         assert(typeMetadata);
-        assertNotEquals(typeMetadata.filter(m => m.target == ClassesScopeDecoratorD && m.token == tokenA).length, 0);
+        assertNotEquals(typeMetadata.filter(m => m.target == D && m.token == tokenA).length, 0);
     }
 });

@@ -29,14 +29,14 @@ export const nonModulesMetadata: {
 };
 
 class ScopeError extends Error {
-    constructor(name: string, value: string) {
-       super(`Don't use 'Scope(${value})' before 'Singleton' or 'Transient' in '${name}'.`);
+    constructor(target: any | string, value: string) {
+       super(`Don't use 'Scope(${value})' before 'Singleton' or 'Transient' in '${typeof target == "string" ? target : target.name}'.`);
     }
 }
 
 class TokenError extends Error {
-    constructor(name: string, value: string) {
-       super(`Don't use 'Token(${value})' before 'Singleton' or 'Transient' in '${name}'.`);
+    constructor(target: any | string, value: string) {
+       super(`Don't use 'Token(${value})' before 'Singleton' or 'Transient' in '${typeof target == "string" ? target : target.name}'.`);
     }
 }
 
@@ -70,7 +70,7 @@ export function getProviderMetadata(target: any): (string | symbol)[] {
 
 export function defineScopeMetadata(target: any, targetKey: string | symbol, value: string) {
     if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new ScopeError(targetKey.toString(), value);
+        throw new ScopeError(targetKey, value);
     }
 
     defineMetadata(deninjectScope, value, target, targetKey);
@@ -78,7 +78,7 @@ export function defineScopeMetadata(target: any, targetKey: string | symbol, val
 
 export function defineTokenMetadata(target: any, targetKey: string | symbol, value: string) {
     if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new TokenError(targetKey.toString(), value);
+        throw new TokenError(targetKey, value);
     }
 
     defineMetadata(deninjectToken, value, target, targetKey);
@@ -86,7 +86,7 @@ export function defineTokenMetadata(target: any, targetKey: string | symbol, val
 
 export function defineClassScopeMetadata(target: any, value: string) {
     if (getMetadata(deninjectLock, target)) {
-        throw new ScopeError(target.toString(), value);
+        throw new ScopeError(target, value);
     }
 
     defineMetadata(deninjectScope, value, target);
@@ -94,7 +94,7 @@ export function defineClassScopeMetadata(target: any, value: string) {
 
 export function defineClassTokenMetadata(target: any, value: string) {
     if (getMetadata(deninjectLock, target)) {
-        throw new TokenError(target.toString(), value);
+        throw new TokenError(target, value);
     }
 
     defineMetadata(deninjectToken, value, target);
@@ -119,7 +119,7 @@ export function pushProviderMetadata(target: any, targetKey: string | symbol) {
     let providers: (string | symbol)[] | undefined = getMetadata(deninjectProvider, target);
     if (providers) {
         if (providers.indexOf(targetKey) > 0) {
-            throw new Error(`Don't use 'Singleton' and 'Transient' at same time in '${String(targetKey)}'.`);
+            throw new Error(`Don't use 'Singleton' and 'Transient' at same time in '${targetKey.toString()}'.`);
         }
     }
     else {

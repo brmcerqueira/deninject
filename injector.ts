@@ -7,7 +7,7 @@ export interface IInjector {
 
 class BindError extends Error {
     constructor(identity: any) {
-       super(`Bind not found for '${identity}'.`);
+       super(`Bind not found for '${identity.name}'.`);
     }
 }
 
@@ -74,18 +74,18 @@ class SubInjector implements IInjector {
     }
 
     private buildType(metadata: TypeMetadata) {
-        let code = this.hashCode(metadata.target);
+        let id = this.getId(metadata.target);
 
         if (metadata.token) {
-            code = this.tokenFormat(code, metadata.token);
+            id = this.tokenFormat(id, metadata.token);
         }
 
         let dependencies = metadata.dependencies.map((func, index) => {
-            let key = this.hashCode(func);
+            let key = this.getId(func);
             return metadata.inject ? this.tokenFormat(key, metadata.inject[index]) : key;
         });
 
-        if (this._binds[code] && this._binds[code].depth >= this._depth) {
+        if (this._binds[id] && this._binds[id].depth >= this._depth) {
             throw new Error(`Bind already defined for '${metadata.target}'.`);
         }
         else {
@@ -104,15 +104,15 @@ class SubInjector implements IInjector {
                 return metadata.create(dependencies.map(key => this._binds[key].get()));
             };
 
-            this._binds[code] = {
+            this._binds[id] = {
                 depth: this._depth,
                 get: metadata.isSingleton ? (): any => {
-                    if (this._cache[code]) {
-                        return this._cache[code];
+                    if (this._cache[id]) {
+                        return this._cache[id];
                     }
                     else {
                         let value = resolve();
-                        this._cache[code] = value;
+                        this._cache[id] = value;
                         return value;
                     }
                 } : resolve
@@ -120,28 +120,33 @@ class SubInjector implements IInjector {
         }
     }
 
-    private tokenFormat(code: string, token: string): string {
-        return `${code}_${token}`;
+    private tokenFormat(id: string, token: string): string {
+        return `${id}_${token}`;
     }
 
-    private hashCode(obj: Object): string {
-        let value = obj.toString();
-        let hash = 0; 
-        let length = value.length; 
-        let i = 0;
-    
-        if (length > 0){   
-            while (i < length) {  
-                hash = (hash << 5) - hash + value.charCodeAt(i++) | 0;
+    private getId(obj: any): string {
+        let deninjectId: string = obj.__deninjectId__;
+
+        if (!deninjectId) {
+            let hash = (Math.random() * 0x40000000) | 0;
+            if (hash === 0) {
+                hash = 1;
             }
+            deninjectId = hash.toString();
+            obj.__deninjectId__ = deninjectId;
         }
-    
-        return hash.toString();
+
+        return deninjectId;
     }
 
     public get<T>(identity: T, token?: string): T {
-        let code = this.hashCode(identity);
-        let bind = this._binds[token ? this.tokenFormat(code, token) : code];
+        let id = (<any>identity).__deninjectId__;
+
+        if (!id) {
+            throw new BindError(identity);
+        }
+ 
+        let bind = this._binds[token ? this.tokenFormat(id, token) : id];
 
         if (!bind) {
             throw new BindError(identity);
