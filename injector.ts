@@ -12,20 +12,20 @@ class BindError extends Error {
 }
 
 class SubInjector implements IInjector {
-    protected _depth: number = 1;
+    private _depth: number = 1;
 
-    protected _cache: {                
+    private _cache: {                
         [key: string]: any
     } = {};
 
-    protected _binds: {
+    private _binds: {
         [key: string]: {
             depth: number,
             get(): any
         }
     } = {};
 
-    protected constructor(scope: string | null, parent: SubInjector | null, modules: any[]) {
+    protected constructor(scope: string | null, parent: SubInjector | null, private _modules: any[]) {
         if (parent) {
             this._depth += parent._depth;
 
@@ -47,7 +47,7 @@ class SubInjector implements IInjector {
             }       
         }
         
-        modules.forEach(module => {
+        _modules.forEach(module => {
             getProviderMetadata(module).forEach(key => {    
                 let scopeMetadata = getScopeMetadata(module, key);        
                 if (scopeMetadata == undefined || (scope && scopeMetadata == scope)) {
@@ -73,7 +73,7 @@ class SubInjector implements IInjector {
         console.log(this._binds);
     }
 
-    protected buildType(metadata: TypeMetadata) {
+    private buildType(metadata: TypeMetadata) {
         let code = this.hashCode(metadata.target);
 
         if (metadata.token) {
@@ -151,7 +151,7 @@ class SubInjector implements IInjector {
     }
 
     public sub(scope: string, ...modules: any[]): IInjector {
-        return new SubInjector(scope, this, modules);
+        return new SubInjector(scope, this, [...this._modules, ...modules]);
     }
 }
 
