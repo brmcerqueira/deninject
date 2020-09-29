@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertNotEquals, assertThrows } from "testing/asserts.ts";
+import { assert, assertEquals } from "testing/asserts.ts";
 import { Inject } from "../../decorators/inject.ts";
 import { getInjectMetadata } from "../../reflections/metadata.ts";
 
