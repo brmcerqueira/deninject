@@ -9,6 +9,12 @@ const deninjectSingleton = "deninject:singleton";
 const deninjectProvider = "deninject:provider";
 const deninjectLock = "deninject:lock";
 
+export type Identity<T> = {
+    prototype: T;
+    name: string,
+    __deninjectId__?: string
+}
+
 export type InjectMetadata = {
     [key: number]: string
 }
@@ -16,9 +22,9 @@ export type InjectMetadata = {
 export type TypeMetadata = {
     isSingleton: boolean,
     token?: string, 
-    target: Function,
+    target: Identity<any>,
     create(args: any[]): any, 
-    dependencies: Function[],
+    dependencies: Identity<any>[],
     inject?: InjectMetadata
 }
 
@@ -29,22 +35,22 @@ export const nonModulesMetadata: {
 };
 
 class ScopeError extends Error {
-    constructor(target: any | string, value: string) {
-       super(`Don't use 'Scope(${value})' before 'Singleton' or 'Transient' in '${typeof target == "string" ? target : target.name}'.`);
+    constructor(target: string, value: string) {
+       super(`Don't use 'Scope(${value})' before 'Singleton' or 'Transient' in '${target}'.`);
     }
 }
 
 class TokenError extends Error {
-    constructor(target: any | string, value: string) {
-       super(`Don't use 'Token(${value})' before 'Singleton' or 'Transient' in '${typeof target == "string" ? target : target.name}'.`);
+    constructor(target: string, value: string) {
+       super(`Don't use 'Token(${value})' before 'Singleton' or 'Transient' in '${target}'.`);
     }
 }
 
-export function getParamtypesMetadata(target: any, targetKey: string | symbol): Function[] {
+export function getParamtypesMetadata(target: any, targetKey: string | symbol): Identity<any>[] {
     return getMetadata(designParamtypes, target, targetKey) || [];
 }
 
-export function getReturntypeMetadata(target: any, targetKey: string | symbol): Function | null {
+export function getReturntypeMetadata(target: any, targetKey: string | symbol): Identity<any> | null {
     return getMetadata(designReturntype, target, targetKey) || null;
 }
 
@@ -70,7 +76,7 @@ export function getProviderMetadata(target: any): (string | symbol)[] {
 
 export function defineScopeMetadata(target: any, targetKey: string | symbol, value: string) {
     if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new ScopeError(targetKey, value);
+        throw new ScopeError(targetKey.toString(), value);
     }
 
     defineMetadata(deninjectScope, value, target, targetKey);
@@ -78,23 +84,23 @@ export function defineScopeMetadata(target: any, targetKey: string | symbol, val
 
 export function defineTokenMetadata(target: any, targetKey: string | symbol, value: string) {
     if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new TokenError(targetKey, value);
+        throw new TokenError(targetKey.toString(), value);
     }
 
     defineMetadata(deninjectToken, value, target, targetKey);
 }
 
-export function defineClassScopeMetadata(target: any, value: string) {
+export function defineClassScopeMetadata(target: Identity<any>, value: string) {
     if (getMetadata(deninjectLock, target)) {
-        throw new ScopeError(target, value);
+        throw new ScopeError(target.name, value);
     }
 
     defineMetadata(deninjectScope, value, target);
 }
 
-export function defineClassTokenMetadata(target: any, value: string) {
+export function defineClassTokenMetadata(target: Identity<any>, value: string) {
     if (getMetadata(deninjectLock, target)) {
-        throw new TokenError(target, value);
+        throw new TokenError(target.name, value);
     }
 
     defineMetadata(deninjectToken, value, target);
@@ -131,7 +137,7 @@ export function pushProviderMetadata(target: any, targetKey: string | symbol) {
     defineMetadata(deninjectLock, true, target, targetKey);
 }
 
-export function pushClassMetadata(target: Function, isSingleton: boolean) {
+export function pushClassMetadata(target: Identity<any>, isSingleton: boolean) {
     let scope: string | undefined = getMetadata(deninjectScope, target);
 
     if (scope) {

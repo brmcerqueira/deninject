@@ -1,16 +1,4 @@
-import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata } from "./reflections/metadata.ts";
-
-export interface Newable<T> {
-    new (...args: any[]): T;
-    __deninjectId__?: string
-}
-  
-export interface Abstract<T> {
-    prototype: T;
-    __deninjectId__?: string
-}
-  
-export type Identity<T> = Newable<T> | Abstract<T>;
+import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, Identity } from "./reflections/metadata.ts";
 
 export interface IInjector {
     get<T>(identity: Identity<T>): T;
@@ -18,8 +6,8 @@ export interface IInjector {
 }
 
 class BindError extends Error {
-    constructor(identity: any) {
-       super(`Bind not found for '${identity.name}'.`);
+    constructor(name: string) {
+       super(`Bind not found for '${name}'.`);
     }
 }
 
@@ -42,16 +30,12 @@ class SubInjector implements IInjector {
             this._depth += parent._depth;
 
             for (const key in parent._binds) {
-                let bind = parent._binds[key];
-                this._binds[key] = {
-                    depth: bind.depth,
-                    get: bind.get
-                }
+                this._binds[key] = parent._binds[key];
             }
         }
 
         for (const key in nonModulesMetadata) {
-            if (key == "__root__" || (scope && key == scope)) {
+            if ((!scope && key == "__root__") || (scope && key == scope)) {
                 nonModulesMetadata[key].forEach(metadata => {
                     this.buildType(metadata); 
                 });
@@ -61,7 +45,7 @@ class SubInjector implements IInjector {
         _modules.forEach(module => {
             getProviderMetadata(module).forEach(key => {    
                 let scopeMetadata = getScopeMetadata(module, key);        
-                if (scopeMetadata == undefined || (scope && scopeMetadata == scope)) {
+                if ((!scope && scopeMetadata == undefined) || (scope && scopeMetadata == scope)) {
                     let returntype = getReturntypeMetadata(module, key);
                     if (returntype) {
                         this.buildType({
@@ -94,7 +78,7 @@ class SubInjector implements IInjector {
         });
 
         if (this._binds[id] && this._binds[id].depth >= this._depth) {
-            throw new Error(`Bind already defined for '${(<any>metadata.target).name}'.`);
+            throw new Error(`Bind already defined for '${metadata.target.name}'.`);
         }
         else {
             dependencies.forEach((key, index) => {
@@ -102,7 +86,7 @@ class SubInjector implements IInjector {
                     this._binds[key] = {
                         depth: 0,
                         get(): any {
-                            throw new BindError(metadata.dependencies[index]);
+                            throw new BindError(metadata.dependencies[index].name);
                         }
                     }
                 }
@@ -149,13 +133,13 @@ class SubInjector implements IInjector {
 
     public get<T>(identity: Identity<T>, token?: string): T {
         if (!identity.__deninjectId__) {
-            throw new BindError(identity);
+            throw new BindError(identity.name);
         }
  
         let bind = this._binds[token ? this.tokenFormat(identity.__deninjectId__, token) : identity.__deninjectId__];
 
         if (!bind) {
-            throw new BindError(identity);
+            throw new BindError(identity.name);
         }
 
         return bind.get();

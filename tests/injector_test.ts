@@ -6,13 +6,20 @@ const scopeA = "scopeA";
 
 const tokenA = "tokenA";
 
-class A {}
-class B {
+abstract class AbstractB {
     constructor(public a: A) {
+        
+    }
+}
+
+class A {}
+class B extends AbstractB {
+    constructor(a: A) {
+        super(a);
     }
 }
 class C {
-    constructor(public b: B) {
+    constructor(public b: AbstractB) {
     }
 }
 
@@ -23,13 +30,13 @@ class TestModule {
     }
 
     @Transient()
-    public buildB(a: A): B {
+    public buildB(a: A): AbstractB {
         return new B(a);
     }
 
     @Transient()
     @Scope(scopeA)
-    public buildC(b: B): C {
+    public buildC(b: AbstractB): C {
         return new C(b);
     }
 }
@@ -38,7 +45,7 @@ Deno.test({
     name: "injector get",
     fn() {   
         const injector = new Injector(new TestModule());
-        const b = injector.get(B);
+        const b = injector.get(AbstractB);
         assert(b instanceof B);
         assert(b.a instanceof A);
     },
@@ -50,6 +57,7 @@ Deno.test({
         const injector = new Injector(new TestModule());
         const subInjector = injector.sub(scopeA);
         const c = subInjector.get(C);
+        assert(c instanceof C);
         assert(c.b instanceof B);
         assert(c.b.a instanceof A);
     },
