@@ -11,7 +11,7 @@ const deninjectLock = "deninject:lock";
 
 export type Identity<T> = {
     prototype: T;
-    name: string,
+    name?: string,
     __deninjectId__?: string
 }
 
@@ -92,7 +92,7 @@ export function defineTokenMetadata(target: any, targetKey: string | symbol, val
 
 export function defineClassScopeMetadata(target: Identity<any>, value: string) {
     if (getMetadata(deninjectLock, target)) {
-        throw new ScopeError(target.name, value);
+        throw new ScopeError(<string>target.name, value);
     }
 
     defineMetadata(deninjectScope, value, target);
@@ -100,7 +100,7 @@ export function defineClassScopeMetadata(target: Identity<any>, value: string) {
 
 export function defineClassTokenMetadata(target: Identity<any>, value: string) {
     if (getMetadata(deninjectLock, target)) {
-        throw new TokenError(target.name, value);
+        throw new TokenError(<string>target.name, value);
     }
 
     defineMetadata(deninjectToken, value, target);

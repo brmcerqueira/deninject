@@ -1,8 +1,14 @@
 import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, Identity } from "./reflections/metadata.ts";
 
-export interface IInjector {
-    get<T>(identity: Identity<T>): T;
-    sub(scope: string, ...modules: any[]): IInjector 
+type Binds = {
+    [key: string]: {
+        depth: number,
+        get(): any
+    }
+}
+
+type ScopeBinds = {                
+    [key: string]: Binds
 }
 
 class BindError extends Error {
@@ -11,61 +17,79 @@ class BindError extends Error {
     }
 }
 
-class SubInjector implements IInjector {
+class SubInjector {
     private _depth: number = 1;
 
     private _cache: {                
         [key: string]: any
     } = {};
 
-    private _binds: {
-        [key: string]: {
-            depth: number,
-            get(): any
-        }
-    } = {};
+    private _binds: {                
+        [key: string]: Binds
+    } = {
+        __root__: {}
+    };
 
-    protected constructor(scope: string | null, parent: SubInjector | null, private _modules: any[]) {
+    protected constructor(scope: string | null, 
+        parent: SubInjector | null,
+        modules: any[]) {
+
         if (parent) {
             this._depth += parent._depth;
-
             for (const key in parent._binds) {
-                this._binds[key] = parent._binds[key];
+                if (key != "__root__") {
+                    this._binds[key] = {};
+                } 
+                let parentBinds = parent._binds[key];
+                let binds = this._binds[scope && scope == key ? "__root__" : key];         
+                for (const bindKey in parentBinds) {
+                    if (!binds[bindKey] || (parentBinds[bindKey].depth >= binds[bindKey].depth)) {
+                        binds[bindKey] = parentBinds[bindKey];
+                    }                   
+                }
             }
         }
 
         for (const key in nonModulesMetadata) {
             if ((!scope && key == "__root__") || (scope && key == scope)) {
                 nonModulesMetadata[key].forEach(metadata => {
-                    this.buildType(metadata); 
+                    this.buildType(this._binds.__root__, metadata); 
                 });
             }       
         }
         
-        _modules.forEach(module => {
+        modules.forEach(module => {
             getProviderMetadata(module).forEach(key => {    
-                let scopeMetadata = getScopeMetadata(module, key);        
-                if ((!scope && scopeMetadata == undefined) || (scope && scopeMetadata == scope)) {
-                    let returntype = getReturntypeMetadata(module, key);
-                    if (returntype) {
-                        this.buildType({
-                            isSingleton: getSingletonMetadata(module, key),
-                            token: getTokenMetadata(module, key),
-                            target: returntype,
-                            dependencies: getParamtypesMetadata(module, key),
-                            inject: getInjectMetadata(module, key),
-                            create(args: any[]): any {
-                                let func: Function = module[key];
-                                return func.apply(module, args);
-                            }
-                        });  
-                    } 
-                }              
+                let target = getReturntypeMetadata(module, key);
+                if (target) {
+                    let binds = this._binds.__root__;
+
+                    let scopeMetadata = getScopeMetadata(module, key);   
+
+                    if (scopeMetadata && scopeMetadata != scope) {
+                        if (!this._binds[scopeMetadata]) {
+                            this._binds[scopeMetadata] = {};
+                        }
+                        binds = this._binds[scopeMetadata];
+                    }
+
+                    this.buildType(binds, {
+                        isSingleton: getSingletonMetadata(module, key),
+                        token: getTokenMetadata(module, key),
+                        target: target,
+                        dependencies: getParamtypesMetadata(module, key),
+                        inject: getInjectMetadata(module, key),
+                        create(args: any[]): any {
+                            let func: Function = module[key];
+                            return func.apply(module, args);
+                        }
+                    });  
+                }               
             })
         });
     }
 
-    private buildType(metadata: TypeMetadata) {
+    private buildType(binds: Binds, metadata: TypeMetadata) {
         let id = this.getId(metadata.target);
 
         if (metadata.token) {
@@ -77,26 +101,30 @@ class SubInjector implements IInjector {
             return metadata.inject ? this.tokenFormat(key, metadata.inject[index]) : key;
         });
 
-        if (this._binds[id] && this._binds[id].depth >= this._depth) {
+        if (binds[id] && binds[id].depth >= this._depth) {
             throw new Error(`Bind already defined for '${metadata.target.name}'.`);
         }
         else {
             dependencies.forEach((key, index) => {
-                if (!this._binds[key]) {
-                    this._binds[key] = {
+                let root = this._binds.__root__;
+                if (root[key] && (!binds[key] || (root[key].depth > binds[key].depth))) {
+                    binds[key] = root[key]; 
+                }
+                else if(!binds[key]) {
+                    binds[key] = {
                         depth: 0,
                         get(): any {
-                            throw new BindError(metadata.dependencies[index].name);
+                            throw new BindError(<string>metadata.dependencies[index].name);
                         }
                     }
                 }
             });
 
             let resolve = (): any => {
-                return metadata.create(dependencies.map(key => this._binds[key].get()));
+                return metadata.create(dependencies.map(key => binds[key].get()));
             };
 
-            this._binds[id] = {
+            binds[id] = {
                 depth: this._depth,
                 get: metadata.isSingleton ? (): any => {
                     if (this._cache[id]) {
@@ -133,20 +161,19 @@ class SubInjector implements IInjector {
 
     public get<T>(identity: Identity<T>, token?: string): T {
         if (!identity.__deninjectId__) {
-            throw new BindError(identity.name);
+            throw new BindError(<string>identity.name);
         }
- 
-        let bind = this._binds[token ? this.tokenFormat(identity.__deninjectId__, token) : identity.__deninjectId__];
+        let bind = this._binds.__root__[token ? this.tokenFormat(identity.__deninjectId__, token) : identity.__deninjectId__];
 
         if (!bind) {
-            throw new BindError(identity.name);
+            throw new BindError(<string>identity.name);
         }
 
         return bind.get();
     }
 
-    public sub(scope: string, ...modules: any[]): IInjector {
-        return new SubInjector(scope, this, [...this._modules, ...modules]);
+    public sub(scope: string, ...modules: any[]): SubInjector {
+        return new SubInjector(scope, this, modules);
     }
 }
 
