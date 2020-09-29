@@ -1,4 +1,4 @@
-import { assert, assertNotEquals } from "testing/asserts.ts";
+import { assert, assertNotEquals, assertThrows } from "testing/asserts.ts";
 import { Scope, Singleton, Token, Transient } from "../../decorators/forClasses.ts";
 import { nonModulesMetadata } from "../../reflections/metadata.ts";
 
@@ -22,11 +22,11 @@ class C {}
 class D {}
 
 Deno.test({
-    name: "classes scope decorator",
+    name: "classes transient decorator",
     fn() {
-        const typeMetadata = nonModulesMetadata[scopeA];
+        const typeMetadata = nonModulesMetadata[scopeRoot];
         assert(typeMetadata);
-        assertNotEquals(typeMetadata.filter(m => m.target == A).length, 0);
+        assertNotEquals(typeMetadata.filter(m => m.target == C).length, 0);
     }
 });
 
@@ -40,11 +40,11 @@ Deno.test({
 });
 
 Deno.test({
-    name: "classes transient decorator",
+    name: "classes scope decorator",
     fn() {
-        const typeMetadata = nonModulesMetadata[scopeRoot];
+        const typeMetadata = nonModulesMetadata[scopeA];
         assert(typeMetadata);
-        assertNotEquals(typeMetadata.filter(m => m.target == C).length, 0);
+        assertNotEquals(typeMetadata.filter(m => m.target == A).length, 0);
     }
 });
 
@@ -54,5 +54,39 @@ Deno.test({
         const typeMetadata = nonModulesMetadata[scopeRoot];
         assert(typeMetadata);
         assertNotEquals(typeMetadata.filter(m => m.target == D && m.token == tokenA).length, 0);
+    }
+});
+
+Deno.test({
+    name: "classes throws scope decorator",
+    fn() {
+        assertThrows((): void => {
+            @Scope(scopeA)
+            @Transient()
+            class Temp {}
+        });
+
+        assertThrows((): void => {
+            @Scope(scopeA)
+            @Singleton()
+            class Temp {}
+        });
+    }
+});
+
+Deno.test({
+    name: "classes throws token decorator",
+    fn() {
+        assertThrows((): void => {
+            @Token(tokenA)
+            @Transient()
+            class Temp {}
+        });
+
+        assertThrows((): void => {
+            @Token(tokenA)
+            @Singleton()
+            class Temp {}
+        });
     }
 });

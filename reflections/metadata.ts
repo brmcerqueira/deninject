@@ -149,7 +149,7 @@ export function pushClassMetadata(target: Function, isSingleton: boolean) {
         inject: getInjectMetadata(target),
         create(args: any[]): any {
             let constructor: ObjectConstructor = target.prototype.constructor;
-            return new constructor(args);
+            return new constructor(...args);
         }
     }); 
 

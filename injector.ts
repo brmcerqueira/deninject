@@ -1,7 +1,19 @@
 import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata } from "./reflections/metadata.ts";
 
+export interface Newable<T> {
+    new (...args: any[]): T;
+    __deninjectId__?: string
+}
+  
+export interface Abstract<T> {
+    prototype: T;
+    __deninjectId__?: string
+}
+  
+export type Identity<T> = Newable<T> | Abstract<T>;
+
 export interface IInjector {
-    get<T>(identity: T): T;
+    get<T>(identity: Identity<T>): T;
     sub(scope: string, ...modules: any[]): IInjector 
 }
 
@@ -29,15 +41,14 @@ class SubInjector implements IInjector {
         if (parent) {
             this._depth += parent._depth;
 
-            for (const bind in parent._binds) {
-                this._binds[bind] = {
-                    depth: this._depth,
-                    get: parent._binds[bind].get
+            for (const key in parent._binds) {
+                let bind = parent._binds[key];
+                this._binds[key] = {
+                    depth: bind.depth,
+                    get: bind.get
                 }
             }
         }
-
-        console.log(nonModulesMetadata);
 
         for (const key in nonModulesMetadata) {
             if (key == "__root__" || (scope && key == scope)) {
@@ -61,16 +72,13 @@ class SubInjector implements IInjector {
                             inject: getInjectMetadata(module, key),
                             create(args: any[]): any {
                                 let func: Function = module[key];
-                                return func.call(module, args);
+                                return func.apply(module, args);
                             }
                         });  
                     } 
                 }              
             })
         });
-
-        console.log(this._cache);
-        console.log(this._binds);
     }
 
     private buildType(metadata: TypeMetadata) {
@@ -124,8 +132,8 @@ class SubInjector implements IInjector {
         return `${id}_${token}`;
     }
 
-    private getId(obj: any): string {
-        let deninjectId: string = obj.__deninjectId__;
+    private getId(identity: Identity<any>): string {
+        let deninjectId = identity.__deninjectId__;
 
         if (!deninjectId) {
             let hash = (Math.random() * 0x40000000) | 0;
@@ -133,20 +141,18 @@ class SubInjector implements IInjector {
                 hash = 1;
             }
             deninjectId = hash.toString();
-            obj.__deninjectId__ = deninjectId;
+            identity.__deninjectId__ = deninjectId;
         }
 
         return deninjectId;
     }
 
-    public get<T>(identity: T, token?: string): T {
-        let id = (<any>identity).__deninjectId__;
-
-        if (!id) {
+    public get<T>(identity: Identity<T>, token?: string): T {
+        if (!identity.__deninjectId__) {
             throw new BindError(identity);
         }
  
-        let bind = this._binds[token ? this.tokenFormat(id, token) : id];
+        let bind = this._binds[token ? this.tokenFormat(identity.__deninjectId__, token) : identity.__deninjectId__];
 
         if (!bind) {
             throw new BindError(identity);
