@@ -122,9 +122,9 @@ class MyModule {
 }
 ```
 
-To use a 'SubInjector':
+To use a `SubInjector`:
 ```ts
-const subInjector = injector.sub("scopeA");
+const subInjector = injector.sub("scopeA", new MyScopeModule());
 const a = subInjector.get(ClassA);
 ```
 
