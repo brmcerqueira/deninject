@@ -18,9 +18,7 @@ Available at Deno Land: [Deninject](https://deno.land/x/deninject)
 The main feature of this module is the `Injector`. This is a class that contains all the dependencies and will be resolvable based on the settings of the injection modules using some specific decorators. Let's see a simple example:
 
 ```ts
-import { Injector, modules } from "https://deno.land/x/deninject/mod.ts"; 
-import Singleton = modules.Singleton;
-import Transient = modules.Transient;
+import { Injector, Singleton, Transient } from "https://deno.land/x/deninject/mod.ts"; 
 
 class ClassA {
     constructor() {
