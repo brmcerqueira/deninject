@@ -1,5 +1,5 @@
-import { assert, assertEquals, assertNotEquals, assertThrows } from "testing/asserts.ts";
-import { Scope, Singleton, Token, Transient } from "../../decorators/forModules.ts";
+import { assert, assertEquals, assertNotEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
+import { Singleton, Scope, Transient, Token } from "../../decorators.ts";
 import { getProviderMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata } from "../../reflections/metadata.ts";
 
 const scopeA = "scopeA";

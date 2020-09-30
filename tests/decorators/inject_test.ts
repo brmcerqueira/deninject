@@ -1,5 +1,5 @@
-import { assert, assertEquals } from "testing/asserts.ts";
-import { Inject } from "../../decorators/inject.ts";
+import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { Inject } from "../../decorators.ts";
 import { getInjectMetadata } from "../../reflections/metadata.ts";
 
 const tokenA = "tokenA";

@@ -1,4 +1,2 @@
-export * as classes from "./decorators/forClasses.ts";
-export * as modules from "./decorators/forModules.ts";
-export * from "./decorators/inject.ts";
+export { Transient, Scope, Singleton, Token, Inject } from "./decorators.ts";
 export { Injector } from "./injector.ts";

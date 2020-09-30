@@ -4,7 +4,7 @@
     {
       "label": "Test",
       "type": "shell",
-      "command": "deno test -c tsconfig.json --importmap=imports.json --unstable",
+      "command": "deno test -c tsconfig.json",
       "options": {
         "cwd": "${workspaceFolder}"
       },

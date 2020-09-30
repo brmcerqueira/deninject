@@ -11,8 +11,7 @@
     "plugins": [
       {
         "name": "typescript-deno-plugin",
-        "enable": true,
-        "importmap": "imports.json"
+        "enable": true
       }
     ]
   }
