@@ -7,10 +7,6 @@ type Binds = {
     }
 }
 
-type ScopeBinds = {                
-    [key: string]: Binds
-}
-
 class BindError extends Error {
     constructor(name: string) {
        super(`Bind not found for '${name}'.`);
@@ -163,6 +159,7 @@ class SubInjector {
         if (!identity.__deninjectId__) {
             throw new BindError(<string>identity.name);
         }
+
         let bind = this._binds.__root__[token ? this.tokenFormat(identity.__deninjectId__, token) : identity.__deninjectId__];
 
         if (!bind) {
