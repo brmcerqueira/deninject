@@ -1,50 +1,70 @@
 import { defineScopeMetadata, defineClassScopeMetadata, defineTokenMetadata, defineClassTokenMetadata, defineSingletonMetadata, pushProviderMetadata, pushClassMetadata, pushInjectMetadata } from "./reflections/metadata.ts";
 
-export type InjectDecorator = (target: any, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<any>) => void;
+export type DeninjectDecorator = (target: any, propertyKey?: string | symbol) => void;
 
-export function Scope(name: string): InjectDecorator {
+export function defineScope(target: any, name: string, propertyKey?: string | symbol) {
+    if (propertyKey) {
+        defineScopeMetadata(target, propertyKey, name); 
+    } else {
+        defineClassScopeMetadata(target, name);  
+    }   
+}
+
+export function defineToken(target: any, name: string, propertyKey?: string | symbol) {
+    if (propertyKey) {
+        defineTokenMetadata(target, propertyKey, name);
+    } else {
+        defineClassTokenMetadata(target, name); 
+    }
+}
+
+export function defineSingleton(target: any, propertyKey?: string | symbol) {
+    if (propertyKey) {
+        defineSingletonMetadata(target, propertyKey);
+        pushProviderMetadata(target, propertyKey); 
+    } else {
+        pushClassMetadata(target, true); 
+    }  
+}
+
+export function defineTransient(target: any, propertyKey?: string | symbol) {
+    if (propertyKey) {
+        pushProviderMetadata(target, propertyKey);
+    } else {
+        pushClassMetadata(target, false); 
+    }
+}
+
+export function defineInject(target: Object, propertyKey: string | symbol, parameterIndex: number, token: string) {
+    pushInjectMetadata(target, propertyKey, parameterIndex, token);
+}
+
+export function Scope(name: string): DeninjectDecorator {
     return (target: any, propertyKey?: string | symbol) => {
-        if (propertyKey) {
-            defineScopeMetadata(target, propertyKey, name); 
-        } else {
-            defineClassScopeMetadata(target, name);  
-        }    
+        defineScope(target, name, propertyKey);    
     };
 }
 
-export function Token(name: string): InjectDecorator {
+export function Token(name: string): DeninjectDecorator {
     return (target: any, propertyKey?: string | symbol) => {
-        if (propertyKey) {
-            defineTokenMetadata(target, propertyKey, name);
-        } else {
-            defineClassTokenMetadata(target, name); 
-        }
+        defineToken(target, name, propertyKey); 
     };
 }
 
-export function Singleton(): InjectDecorator {
+export function Singleton(): DeninjectDecorator {
     return (target: any, propertyKey?: string | symbol) => {
-        if (propertyKey) {
-            defineSingletonMetadata(target, propertyKey);
-            pushProviderMetadata(target, propertyKey); 
-        } else {
-            pushClassMetadata(target, true); 
-        }          
+        defineSingleton(target, propertyKey);          
     };
 }
 
-export function Transient(): InjectDecorator {
+export function Transient(): DeninjectDecorator {
     return (target: any, propertyKey?: string | symbol) => {
-        if (propertyKey) {
-            pushProviderMetadata(target, propertyKey);
-        } else {
-            pushClassMetadata(target, false); 
-        }       
+        defineTransient(target, propertyKey);      
     };
 }
 
 export function Inject(token: string): ParameterDecorator {
     return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
-        pushInjectMetadata(target, propertyKey, parameterIndex, token);
+        defineInject(target, propertyKey, parameterIndex, token);
     };
 }
