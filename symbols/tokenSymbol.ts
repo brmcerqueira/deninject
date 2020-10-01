@@ -1,5 +1,3 @@
-import { generateHashCode } from "../generateHashCode.ts";
-
 import { defineInject, defineToken } from "../decorators.ts";
 import { AbstractSymbol } from "./abstractSymbol.ts";
 

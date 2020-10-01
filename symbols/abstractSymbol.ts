@@ -6,7 +6,6 @@ export abstract class AbstractSymbol {
 
     constructor() {
         this._id = generateHashCode();
-        console.log("Symbol Id:", this._id);
     }
 
     public get id(): string {
