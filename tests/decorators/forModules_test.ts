@@ -59,7 +59,7 @@ Deno.test("modules scope decorator", () => {
 
 Deno.test("modules token decorator", () => {
     const testModule = new TestModule();
-    assertEquals(tokenA, getTokenMetadata(testModule, "buildB"));
+    assertEquals(tokenA, getTokenMetadata(testModule, "buildB")?.value);
 });
 
 Deno.test("modules inject decorator", () => {
@@ -67,7 +67,7 @@ Deno.test("modules inject decorator", () => {
     let injectMetadata = getInjectMetadata(testModule, "buildC");
     assert(injectMetadata);
     if (injectMetadata) {           
-        assertEquals(injectMetadata[0], tokenA);
+        assertEquals(injectMetadata[0]?.value, tokenA);
     }
 });
 

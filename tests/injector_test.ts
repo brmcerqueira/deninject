@@ -1,10 +1,12 @@
 import { assert, assertStrictEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 import { Singleton, Transient, Scope, Token, Inject } from "../decorators.ts";
 import { Injector } from "../injector.ts";
+import { ScopeSymbol } from "../symbols/scopeSymbol.ts";
+import { TokenSymbol } from "../symbols/tokenSymbol.ts";
 
-const scopeA = "scopeA";
+const scopeA = new ScopeSymbol();
 
-const tokenA = "tokenA";
+const tokenA = new TokenSymbol();
 const tokenB = "tokenB";
 
 abstract class AbstractClass {
@@ -42,14 +44,14 @@ class TestModule {
     }
 
     @Transient()
-    @Token(tokenA)
+    @tokenA.apply()
     public buildB(a: A): AbstractClass {
         return new B(a);
     }
 
     @Transient()
-    @Scope(scopeA)
-    public buildC(@Inject(tokenA) ac: AbstractClass): C {
+    @scopeA.apply()
+    public buildC(@tokenA.inject() ac: AbstractClass): C {
         return new C(ac);
     }
 

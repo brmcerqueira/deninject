@@ -10,11 +10,16 @@ export function defineScope(target: any, name: string, propertyKey?: string | sy
     }   
 }
 
-export function defineToken(target: any, name: string, propertyKey?: string | symbol) {
+export function defineToken(target: any, value: string, propertyKey?: string | symbol, 
+    ignoreType: boolean = false) {
+    let token = {
+        ignoreType: ignoreType,
+        value: value
+    };
     if (propertyKey) {
-        defineTokenMetadata(target, propertyKey, name);
+        defineTokenMetadata(target, propertyKey, token);
     } else {
-        defineClassTokenMetadata(target, name); 
+        defineClassTokenMetadata(target, token); 
     }
 }
 
@@ -35,8 +40,12 @@ export function defineTransient(target: any, propertyKey?: string | symbol) {
     }
 }
 
-export function defineInject(target: Object, propertyKey: string | symbol, parameterIndex: number, token: string) {
-    pushInjectMetadata(target, propertyKey, parameterIndex, token);
+export function defineInject(target: Object, propertyKey: string | symbol, 
+    parameterIndex: number, token: string, ignoreType: boolean = false) {
+    pushInjectMetadata(target, propertyKey, parameterIndex, {
+        ignoreType: ignoreType,
+        value: token
+    });
 }
 
 export function Scope(name: string): DeninjectDecorator {
@@ -45,9 +54,9 @@ export function Scope(name: string): DeninjectDecorator {
     };
 }
 
-export function Token(name: string): DeninjectDecorator {
+export function Token(name: string, ignoreType: boolean = false): DeninjectDecorator {
     return (target: any, propertyKey?: string | symbol) => {
-        defineToken(target, name, propertyKey); 
+        defineToken(target, name, propertyKey, ignoreType); 
     };
 }
 
@@ -63,8 +72,8 @@ export function Transient(): DeninjectDecorator {
     };
 }
 
-export function Inject(token: string): ParameterDecorator {
+export function Inject(token: string, ignoreType: boolean = false): ParameterDecorator {
     return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
-        defineInject(target, propertyKey, parameterIndex, token);
+        defineInject(target, propertyKey, parameterIndex, token, ignoreType);
     };
 }

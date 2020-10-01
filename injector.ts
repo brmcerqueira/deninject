@@ -1,4 +1,9 @@
-import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, Identity } from "./reflections/metadata.ts";
+import { generateHashCode } from "./generateHashCode.ts";
+import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, Identity, root } from "./reflections/metadata.ts";
+import { ScopeSymbol } from "./symbols/scopeSymbol.ts";
+import { TokenSymbol } from "./symbols/tokenSymbol.ts";
+
+const anything = "anything";
 
 type Binds = {
     [key: string]: {
@@ -33,11 +38,11 @@ class SubInjector {
         if (parent) {
             this._depth += parent._depth;
             for (const key in parent._binds) {
-                if (key != "__root__") {
+                if (key != root) {
                     this._binds[key] = {};
                 } 
                 let parentBinds = parent._binds[key];
-                let binds = this._binds[scope && scope == key ? "__root__" : key];         
+                let binds = this._binds[scope && scope == key ? root : key];         
                 for (const bindKey in parentBinds) {
                     if (!binds[bindKey] || (parentBinds[bindKey].depth >= binds[bindKey].depth)) {
                         binds[bindKey] = parentBinds[bindKey];
@@ -47,7 +52,7 @@ class SubInjector {
         }
 
         for (const key in nonModulesMetadata) {
-            if ((!scope && key == "__root__") || (scope && key == scope)) {
+            if ((!scope && key == root) || (scope && key == scope)) {
                 nonModulesMetadata[key].forEach(metadata => {
                     this.buildType(this._binds.__root__, metadata); 
                 });
@@ -86,15 +91,25 @@ class SubInjector {
     }
 
     private buildType(binds: Binds, metadata: TypeMetadata) {
-        let id = this.getId(metadata.target);
+        let id = "";
 
         if (metadata.token) {
-            id = this.tokenFormat(id, metadata.token);
+            id = this.tokenFormat(metadata.token.ignoreType ? anything : this.getId(metadata.target), 
+            metadata.token.value);
+        }
+        else {
+            id = this.getId(metadata.target);
         }
 
         let dependencies = metadata.dependencies.map((func, index) => {
-            let key = this.getId(func);
-            return metadata.inject ? this.tokenFormat(key, metadata.inject[index]) : key;
+            if (metadata.inject && metadata.inject[index]) {
+                let token = metadata.inject[index];
+                return this.tokenFormat(
+                    token.ignoreType ? anything : this.getId(func), 
+                    token.value);
+            } else {
+                return this.getId(func);
+            }
         });
 
         if (binds[id] && binds[id].depth >= this._depth) {
@@ -102,9 +117,9 @@ class SubInjector {
         }
         else {
             dependencies.forEach((key, index) => {
-                let root = this._binds.__root__;
-                if (root[key] && (!binds[key] || (root[key].depth > binds[key].depth))) {
-                    binds[key] = root[key]; 
+                let bindsRoot = this._binds.__root__;
+                if (bindsRoot[key] && (!binds[key] || (bindsRoot[key].depth > binds[key].depth))) {
+                    binds[key] = bindsRoot[key]; 
                 }
                 else if(!binds[key]) {
                     binds[key] = {
@@ -144,33 +159,56 @@ class SubInjector {
         let deninjectId = identity.__deninjectId__;
 
         if (!deninjectId) {
-            let hash = (Math.random() * 0x40000000) | 0;
-            if (hash === 0) {
-                hash = 1;
-            }
-            deninjectId = hash.toString();
+            deninjectId = generateHashCode();
             identity.__deninjectId__ = deninjectId;
         }
 
         return deninjectId;
     }
 
-    public get<T>(identity: Identity<T>, token?: string): T {
-        if (!identity.__deninjectId__) {
-            throw new BindError(<string>identity.name);
+    public get<T>(identity: Identity<T>, token?: string | TokenSymbol): T {
+        return this.privateGet(identity, token || null);
+    }
+
+    public getByToken(token: string | TokenSymbol): any {
+        this.privateGet(null, token);
+    }
+
+    private privateGet<T>(identity: Identity<T> | null, token: string | TokenSymbol | null): T {
+        let id: string | null = null;
+        let tokenValue: string | null = null;
+
+        if (token) {
+            if (token instanceof TokenSymbol) {
+                tokenValue = token.id;
+                if (token.ignoreType) {
+                    id = anything;
+                }
+            }
+            else {
+                tokenValue = token;
+            }
         }
 
-        let bind = this._binds.__root__[token ? this.tokenFormat(identity.__deninjectId__, token) : identity.__deninjectId__];
+        if (identity && identity.__deninjectId__ && !id) {
+            id = identity.__deninjectId__;
+        }
+
+        if (!id) {
+            throw new BindError(<string>(identity ? identity.name : tokenValue));
+        }
+
+        let bind = this._binds.__root__[tokenValue ? this.tokenFormat(id, tokenValue) : id];
 
         if (!bind) {
-            throw new BindError(<string>identity.name);
+            throw new BindError(<string>(identity ? identity.name : tokenValue));
         }
 
         return bind.get();
     }
 
-    public sub(scope: string, ...modules: any[]): SubInjector {
-        return new SubInjector(scope, this, modules);
+    public sub(scope: string | ScopeSymbol, ...modules: any[]): SubInjector {
+        return new SubInjector(scope instanceof ScopeSymbol ? scope.id : scope, this, modules);
     }
 }
 

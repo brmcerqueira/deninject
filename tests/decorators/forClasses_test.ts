@@ -48,14 +48,14 @@ Deno.test("classes scope decorator", () => {
 Deno.test("classes token decorator", () => {
     const typeMetadata = nonModulesMetadata[scopeRoot];
     assert(typeMetadata);
-    assertNotEquals(typeMetadata.filter(m => m.target == D && m.token == tokenA).length, 0);
+    assertNotEquals(typeMetadata.filter(m => m.target == D && m.token?.value == tokenA).length, 0);
 });
 
 Deno.test("classes inject decorator", () => {
     let injectMetadata = getInjectMetadata(E);
     assert(injectMetadata);
     if (injectMetadata) {           
-        assertEquals(injectMetadata[0], tokenA);
+        assertEquals(injectMetadata[0]?.value, tokenA);
     }
 });
 

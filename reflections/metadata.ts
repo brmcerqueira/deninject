@@ -9,19 +9,26 @@ const deninjectSingleton = "deninject:singleton";
 const deninjectProvider = "deninject:provider";
 const deninjectLock = "deninject:lock";
 
+export const root = "__root__";
+
 export type Identity<T> = {
     prototype: T;
     name?: string,
     __deninjectId__?: string
 }
 
+export type TokenValue = {
+    ignoreType: boolean,
+    value: string
+}
+
 export type InjectMetadata = {
-    [key: number]: string
+    [key: number]: TokenValue
 }
 
 export type TypeMetadata = {
     isSingleton: boolean,
-    token?: string, 
+    token?: TokenValue, 
     target: Identity<any>,
     create(args: any[]): any, 
     dependencies: Identity<any>[],
@@ -58,7 +65,7 @@ export function getScopeMetadata(target: any, targetKey: string | symbol): strin
     return getMetadata(deninjectScope, target, targetKey);
 }
 
-export function getTokenMetadata(target: any, targetKey: string | symbol): string | undefined {
+export function getTokenMetadata(target: any, targetKey: string | symbol): TokenValue | undefined {
     return getMetadata(deninjectToken, target, targetKey);
 }
 
@@ -82,12 +89,12 @@ export function defineScopeMetadata(target: any, targetKey: string | symbol, val
     defineMetadata(deninjectScope, value, target, targetKey);
 }
 
-export function defineTokenMetadata(target: any, targetKey: string | symbol, value: string) {
+export function defineTokenMetadata(target: any, targetKey: string | symbol, token: TokenValue) {
     if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new TokenError(targetKey.toString(), value);
+        throw new TokenError(targetKey.toString(), token.value);
     }
 
-    defineMetadata(deninjectToken, value, target, targetKey);
+    defineMetadata(deninjectToken, token, target, targetKey);
 }
 
 export function defineClassScopeMetadata(target: Identity<any>, value: string) {
@@ -98,19 +105,20 @@ export function defineClassScopeMetadata(target: Identity<any>, value: string) {
     defineMetadata(deninjectScope, value, target);
 }
 
-export function defineClassTokenMetadata(target: Identity<any>, value: string) {
+export function defineClassTokenMetadata(target: Identity<any>, token: TokenValue) {
     if (getMetadata(deninjectLock, target)) {
-        throw new TokenError(<string>target.name, value);
+        throw new TokenError(<string>target.name, token.value);
     }
 
-    defineMetadata(deninjectToken, value, target);
+    defineMetadata(deninjectToken, token, target);
 }
 
 export function defineSingletonMetadata(target: any, targetKey: string | symbol) {
     defineMetadata(deninjectSingleton, true, target, targetKey);
 }
 
-export function pushInjectMetadata(target: any, targetKey: string | symbol | undefined, parameterIndex: number, value: string) {
+export function pushInjectMetadata(target: any, targetKey: string | symbol | undefined, 
+    parameterIndex: number, token: TokenValue) {
     let injectMetadata = getInjectMetadata(target, targetKey);
 
     if (!injectMetadata) {
@@ -118,7 +126,7 @@ export function pushInjectMetadata(target: any, targetKey: string | symbol | und
         defineMetadata(deninjectInject, injectMetadata, target, targetKey);
     }
 
-    injectMetadata[parameterIndex] = value;
+    injectMetadata[parameterIndex] = token;
 }
 
 export function pushProviderMetadata(target: any, targetKey: string | symbol) {
@@ -144,7 +152,7 @@ export function pushClassMetadata(target: Identity<any>, isSingleton: boolean) {
         nonModulesMetadata[scope] = [];
     }
     else {
-        scope = "__root__";
+        scope = root;
     }
 
     nonModulesMetadata[scope].push({
