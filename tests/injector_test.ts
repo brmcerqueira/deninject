@@ -8,6 +8,7 @@ const scopeA = new ScopeSymbol();
 
 const tokenA = new TokenSymbol();
 const tokenB = "tokenB";
+const tokenC = new TokenSymbol(true);
 
 abstract class AbstractClass {
     constructor(public a: A) {
@@ -65,12 +66,25 @@ class TestModule {
     public buildE(@Inject(tokenB) ac: AbstractClass): E {
         return new E(ac);
     }
+
+    @Transient()
+    @tokenC.apply()
+    public buildDtokenC(a: A): AbstractClass {
+        return new D(a);
+    }
 }
 
 Deno.test("injector get", () => {
     const injector = new Injector(new TestModule());
     const ac = injector.get(AbstractClass, tokenA);
     assert(ac instanceof B);
+    assert(ac.a instanceof A);
+});
+
+Deno.test("injector getByToken", () => {
+    const injector = new Injector(new TestModule());
+    const ac = injector.getByToken(tokenC);
+    assert(ac instanceof D);
     assert(ac.a instanceof A);
 });
 

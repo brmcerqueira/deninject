@@ -1,11 +1,13 @@
 import { assert, assertEquals, assertNotEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 import { Transient, Scope, Singleton, Token, Inject } from "../../decorators.ts";
 import { getInjectMetadata, nonModulesMetadata } from "../../reflections/metadata.ts";
+import { TokenSymbol } from "../../symbols/tokenSymbol.ts";
 
 const scopeRoot = "__root__";
 const scopeA = "scopeA";
 
 const tokenA = "tokenA";
+const tokenB = new TokenSymbol(true);
 
 @Transient()
 @Scope(scopeA)
@@ -24,6 +26,16 @@ class D {}
 @Transient()
 class E {
     constructor(@Inject(tokenA) d: D) {
+    }
+}
+
+@Transient()
+@tokenB.apply()
+class F {}
+
+@Transient()
+class G {
+    constructor(@tokenB.inject() f: F) {
     }
 }
 
@@ -56,6 +68,15 @@ Deno.test("classes inject decorator", () => {
     assert(injectMetadata);
     if (injectMetadata) {           
         assertEquals(injectMetadata[0]?.value, tokenA);
+    }
+});
+
+Deno.test("classes inject ignoreType decorator", () => {
+    let injectMetadata = getInjectMetadata(G);
+    assert(injectMetadata);
+    if (injectMetadata) {
+        assert(injectMetadata[0]?.ignoreType);           
+        assertEquals(injectMetadata[0]?.value, tokenB.id);
     }
 });
 

@@ -171,7 +171,7 @@ class SubInjector {
     }
 
     public getByToken(token: string | TokenSymbol): any {
-        this.privateGet(null, token);
+        return this.privateGet(null, token);
     }
 
     private privateGet<T>(identity: Identity<T> | null, token: string | TokenSymbol | null): T {
