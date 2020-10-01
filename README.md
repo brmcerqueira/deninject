@@ -165,7 +165,7 @@ class ClassB {
 }
 ```
 
-## 
+## Symbols
 
 The `Symbols` serve to facilitate the use of scopes and tokens in the application, it is just another option of use.
 
