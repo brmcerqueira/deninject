@@ -11,6 +11,9 @@ Available at Deno Land: [Deninject](https://deno.land/x/deninject)
   - [Singleton](#singleton)
   - [Scope](#scope)
   - [Token](#token)
+- [Symbols](#symbols)
+  - [Scope Symbol](#scope-symbol)
+  - [Token Symbol](#token-symbol)  
 - [Setup](#setup)
 
 ## Injector
@@ -143,7 +146,7 @@ class ClassA {}
 
 class MyModule {
     @Transient()
-    @Token("tokenA")
+    @Token("tokenA", true /*If you want use ignoreType*/)
     public buildA(): ClassA {
         return new ClassA();
     }
@@ -158,7 +161,39 @@ const a = injector.get(ClassA, "tokenA");
 To inject a specific instance using a token:
 ```ts
 class ClassB {
-    constructor(@Inject("tokenA") a: ClassA) {}
+    constructor(@Inject("tokenA", true /*If you want use ignoreType*/) a: ClassA) {}
+}
+```
+
+## 
+
+The `Symbols` serve to facilitate the use of scopes and tokens in the application, it is just another option of use.
+
+### Scope Symbol
+
+It has the same purpose as the `Scope`.
+
+```ts
+const scopeA = new ScopeSymbol();
+
+@Transient()
+@scopeA.apply()
+class ClassA {}
+```
+
+### Token Symbol
+
+It has the same purpose as the `Token`.
+
+```ts
+const tokenA = new TokenSymbol(true /*If you want use ignoreType*/);
+
+@Transient()
+@tokenA.apply()
+class ClassA {}
+
+class ClassB {
+    constructor(@tokenA.inject() a: ClassA) {}
 }
 ```
 
