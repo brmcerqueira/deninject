@@ -1,7 +1,8 @@
 import { defineInject, defineToken } from "../decorators.ts";
+import type { IToken } from "../reflections/metadata.ts";
 import { AbstractSymbol } from "./abstractSymbol.ts";
 
-export class TokenSymbol extends AbstractSymbol {
+export class TokenSymbol extends AbstractSymbol implements IToken {
     constructor(private _ignoreType: boolean = false) {
         super();
     }

@@ -1,14 +1,21 @@
 import { generateHashCode } from "./generateHashCode.ts";
-import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, Identity, root } from "./reflections/metadata.ts";
+import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, Identity, root, dynamicToken, IToken } from "./reflections/metadata.ts";
 import { ScopeSymbol } from "./symbols/scopeSymbol.ts";
 import { TokenSymbol } from "./symbols/tokenSymbol.ts";
 
 const anything = "anything";
 
+type Token = string | TokenSymbol;
+
+type Dependency = { 
+    id?: string, 
+    token?: IToken 
+}
+
 type Binds = {
     [key: string]: {
         depth: number,
-        get(): any
+        get(token: Token | null): any
     }
 }
 
@@ -94,61 +101,87 @@ class SubInjector {
         let id = "";
 
         if (metadata.token) {
-            id = this.tokenFormat(metadata.token.ignoreType ? anything : this.getId(metadata.target), 
-            metadata.token.value);
+            id = this.identityFormat(metadata.target, metadata.token);
         }
         else {
             id = this.getId(metadata.target);
         }
 
-        let dependencies = metadata.dependencies.map((func, index) => {
-            if (metadata.inject && metadata.inject[index]) {
-                let token = metadata.inject[index];
-                return this.tokenFormat(
-                    token.ignoreType ? anything : this.getId(func), 
-                    token.value);
+        let dependencies: Dependency[] = metadata.dependencies.map((identity, index) => {
+            const dependency: Dependency = {};
+
+            if (metadata.inject && metadata.inject[index] && metadata.inject[index] != dynamicToken) {           
+                dependency.token = <IToken>metadata.inject[index];
+                dependency.id = this.identityFormat(identity, dependency.token);
             } else {
-                return this.getId(func);
+                dependency.id = this.getId(identity);
             }
+
+            return dependency;
         });
 
         if (binds[id] && binds[id].depth >= this._depth) {
             throw new Error(`Bind already defined for '${metadata.target.name}'.`);
         }
         else {
-            dependencies.forEach((key, index) => {
-                let bindsRoot = this._binds.__root__;
-                if (bindsRoot[key] && (!binds[key] || (bindsRoot[key].depth > binds[key].depth))) {
-                    binds[key] = bindsRoot[key]; 
-                }
-                else if(!binds[key]) {
-                    binds[key] = {
-                        depth: 0,
-                        get(): any {
-                            throw new BindError(<string>metadata.dependencies[index].name);
+            dependencies.forEach((dep, index) => {               
+                if (dep.id) {
+                    let depId = dep.id;
+                    let bindsRoot = this._binds.__root__;
+                    if (bindsRoot[depId] && (!binds[depId] || (bindsRoot[depId].depth > binds[depId].depth))) {
+                        binds[depId] = bindsRoot[depId]; 
+                    }
+                    else if(!binds[depId]) {
+                        binds[depId] = {
+                            depth: 0,
+                            get(): any {
+                                throw new BindError(<string>metadata.dependencies[index].name);
+                            }
                         }
                     }
                 }
             });
 
-            let resolve = (): any => {
-                return metadata.create(dependencies.map(key => binds[key].get()));
+            let resolve = (token: Token | null): any => {
+                return metadata.create(dependencies.map(dep => {   
+                    if (dep.id) {
+                        let depToken = null;
+
+                        if (dep.token) {
+                            if (dep.token instanceof TokenSymbol) {
+                                depToken = dep.token;
+                            }
+                            else {
+                                depToken = (<IToken>dep.token).id;
+                            }                                         
+                        }
+                        
+                        return binds[dep.id].get(depToken); 
+                    }
+                    else {
+                        return token;
+                    }
+                }));
             };
 
             binds[id] = {
                 depth: this._depth,
-                get: metadata.isSingleton ? (): any => {
+                get: metadata.isSingleton ? (token: Token | null): any => {
                     if (this._cache[id]) {
                         return this._cache[id];
                     }
                     else {
-                        let value = resolve();
+                        let value = resolve(token);
                         this._cache[id] = value;
                         return value;
                     }
                 } : resolve
             }
         }
+    }
+
+    private identityFormat(identity: Identity<any>, token: IToken): string {
+        return this.tokenFormat(token.ignoreType ? anything : this.getId(identity), token.id);
     }
 
     private tokenFormat(id: string, token: string): string {
@@ -166,15 +199,15 @@ class SubInjector {
         return deninjectId;
     }
 
-    public get<T>(identity: Identity<T>, token?: string | TokenSymbol): T {
+    public get<T>(identity: Identity<T>, token?: Token): T {
         return this.privateGet(identity, token || null);
     }
 
-    public getByToken(token: string | TokenSymbol): any {
+    public getByToken(token: Token): any {
         return this.privateGet(null, token);
     }
 
-    private privateGet<T>(identity: Identity<T> | null, token: string | TokenSymbol | null): T {
+    private privateGet<T>(identity: Identity<T> | null, token: Token | null): T {
         let id: string | null = null;
         let tokenValue: string | null = null;
 
@@ -204,7 +237,7 @@ class SubInjector {
             throw new BindError(<string>(identity ? identity.name : tokenValue));
         }
 
-        return bind.get();
+        return bind.get(token);
     }
 
     public sub(scope: string | ScopeSymbol, ...modules: any[]): SubInjector {

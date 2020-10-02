@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertNotEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 import { Transient, Scope, Singleton, Token, Inject } from "../../decorators.ts";
-import { getInjectMetadata, nonModulesMetadata } from "../../reflections/metadata.ts";
+import { getInjectMetadata, IToken, nonModulesMetadata } from "../../reflections/metadata.ts";
 import { TokenSymbol } from "../../symbols/tokenSymbol.ts";
 
 const scopeRoot = "__root__";
@@ -60,14 +60,14 @@ Deno.test("classes scope decorator", () => {
 Deno.test("classes token decorator", () => {
     const typeMetadata = nonModulesMetadata[scopeRoot];
     assert(typeMetadata);
-    assertNotEquals(typeMetadata.filter(m => m.target == D && m.token?.value == tokenA).length, 0);
+    assertNotEquals(typeMetadata.filter(m => m.target == D && m.token?.id == tokenA).length, 0);
 });
 
 Deno.test("classes inject decorator", () => {
     let injectMetadata = getInjectMetadata(E);
     assert(injectMetadata);
-    if (injectMetadata) {           
-        assertEquals(injectMetadata[0]?.value, tokenA);
+    if (injectMetadata) {          
+        assertEquals((<IToken>injectMetadata[0])?.id, tokenA);
     }
 });
 
@@ -75,8 +75,9 @@ Deno.test("classes inject ignoreType decorator", () => {
     let injectMetadata = getInjectMetadata(G);
     assert(injectMetadata);
     if (injectMetadata) {
-        assert(injectMetadata[0]?.ignoreType);           
-        assertEquals(injectMetadata[0]?.value, tokenB.id);
+        const token = <IToken>injectMetadata[0];
+        assert(token?.ignoreType);
+        assertEquals(token?.id, tokenB.id);
     }
 });
 

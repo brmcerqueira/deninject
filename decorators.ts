@@ -10,11 +10,11 @@ export function defineScope(target: any, name: string, propertyKey?: string | sy
     }   
 }
 
-export function defineToken(target: any, value: string, propertyKey?: string | symbol, 
+export function defineToken(target: any, id: string, propertyKey?: string | symbol, 
     ignoreType: boolean = false) {
     let token = {
         ignoreType: ignoreType,
-        value: value
+        id: id
     };
     if (propertyKey) {
         defineTokenMetadata(target, propertyKey, token);
@@ -44,7 +44,7 @@ export function defineInject(target: any, propertyKey: string | symbol,
     parameterIndex: number, token: string, ignoreType: boolean = false) {
     pushInjectMetadata(target, propertyKey, parameterIndex, {
         ignoreType: ignoreType,
-        value: token
+        id: token
     });
 }
 
