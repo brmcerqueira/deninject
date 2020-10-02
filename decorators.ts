@@ -1,4 +1,4 @@
-import { defineScopeMetadata, defineClassScopeMetadata, defineTokenMetadata, defineClassTokenMetadata, defineSingletonMetadata, pushProviderMetadata, pushClassMetadata, pushArgumentsMetadata, IToken, dynamicToken } from "./reflections/metadata.ts";
+import { defineScopeMetadata, defineClassScopeMetadata, defineTokenMetadata, defineClassTokenMetadata, defineSingletonMetadata, pushProviderMetadata, pushClassMetadata, pushArgumentsMetadata, IToken, dynamicToken, pushDynamicToken } from "./reflections/metadata.ts";
 
 export type DeninjectDecorator = (target: any, propertyKey?: string | symbol) => void;
 
@@ -45,7 +45,7 @@ export function defineArgument(target: any, propertyKey: string | symbol, parame
 }
 
 export function defineDynamicToken(target: any, propertyKey: string | symbol, parameterIndex: number) {
-    pushArgumentsMetadata(target, propertyKey, parameterIndex, dynamicToken);
+    pushDynamicToken(target, propertyKey, parameterIndex);
 }
 
 export function Scope(name: string): DeninjectDecorator {

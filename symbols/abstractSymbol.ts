@@ -12,6 +12,14 @@ export abstract class AbstractSymbol {
         return this._id;
     }
 
+    public valueOf(): string {
+        return this.id;
+    }
+
+    public toString(): string {
+        return this.id;
+    }
+
     public apply(): DeninjectDecorator {
         return (target: any, propertyKey?: string | symbol) => {
             this.defineApply(target, propertyKey);      

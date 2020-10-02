@@ -45,14 +45,14 @@ export const nonModulesMetadata: {
 };
 
 class ScopeError extends Error {
-    constructor(target: string, value: string) {
-       super(`Don't use 'Scope(${value})' before 'Singleton' or 'Transient' in '${target}'.`);
+    constructor(target: Object, value: Object) {
+       super(`Don't use 'Scope(${value.toString()})' before 'Singleton' or 'Transient' in '${target.toString()}'.`);
     }
 }
 
 class TokenError extends Error {
-    constructor(target: string, value: IToken) {
-       super(`Don't use 'Token(${value.toString()})' before 'Singleton' or 'Transient' in '${target}'.`);
+    constructor(target: Object, value: IToken) {
+       super(`Don't use 'Token(${value.toString()})' before 'Singleton' or 'Transient' in '${target.toString()}'.`);
     }
 }
 
@@ -86,7 +86,7 @@ export function getProviderMetadata(target: any): (string | symbol)[] {
 
 export function defineScopeMetadata(target: any, targetKey: string | symbol, value: string) {
     if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new ScopeError(targetKey.toString(), value);
+        throw new ScopeError(targetKey, value);
     }
 
     defineMetadata(deninjectScope, value, target, targetKey);
@@ -94,7 +94,7 @@ export function defineScopeMetadata(target: any, targetKey: string | symbol, val
 
 export function defineTokenMetadata(target: any, targetKey: string | symbol, token: IToken) {
     if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new TokenError(targetKey.toString(), token);
+        throw new TokenError(targetKey, token);
     }
 
     defineMetadata(deninjectToken, token, target, targetKey);
@@ -120,8 +120,8 @@ export function defineSingletonMetadata(target: any, targetKey: string | symbol)
     defineMetadata(deninjectSingleton, true, target, targetKey);
 }
 
-export function pushArgumentsMetadata(target: any, targetKey: string | symbol | undefined, 
-    parameterIndex: number, value: ArgumentMetadataValue) {
+export function pushArgumentsMetadata(target: any, targetKey: string | symbol | undefined, parameterIndex: number, 
+    value: ArgumentMetadataValue) {
     let argumentsMetadata = getArgumentsMetadata(target, targetKey);
 
     if (!argumentsMetadata) {
@@ -130,6 +130,14 @@ export function pushArgumentsMetadata(target: any, targetKey: string | symbol | 
     }
 
     argumentsMetadata[parameterIndex] = value;
+}
+
+export function pushDynamicToken(target: any, targetKey: string | symbol | undefined, parameterIndex: number) {
+    if (getMetadata(deninjectToken, target, targetKey)) {
+        throw new Error(`Don't use 'DynamicToken' with 'Token' in '${targetKey ? targetKey.toString() : target.name}'.`);
+    }
+
+    pushArgumentsMetadata(target, targetKey, parameterIndex, dynamicToken);
 }
 
 export function pushProviderMetadata(target: any, targetKey: string | symbol) {
