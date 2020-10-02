@@ -40,7 +40,7 @@ export function defineTransient(target: any, propertyKey?: string | symbol) {
     }
 }
 
-export function defineInject(target: Object, propertyKey: string | symbol, 
+export function defineInject(target: any, propertyKey: string | symbol, 
     parameterIndex: number, token: string, ignoreType: boolean = false) {
     pushInjectMetadata(target, propertyKey, parameterIndex, {
         ignoreType: ignoreType,
@@ -73,7 +73,7 @@ export function Transient(): DeninjectDecorator {
 }
 
 export function Inject(token: string, ignoreType: boolean = false): ParameterDecorator {
-    return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+    return (target: any, propertyKey: string | symbol, parameterIndex: number) => {
         defineInject(target, propertyKey, parameterIndex, token, ignoreType);
     };
 }

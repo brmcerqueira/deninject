@@ -6,7 +6,7 @@ export class ScopeSymbol extends AbstractSymbol {
         super();
     }
 
-    protected applyDecorator(target: any, propertyKey?: string | symbol): void {
+    public defineApply(target: any, propertyKey?: string | symbol): void {
         defineScope(target, this.id, propertyKey); 
     }
 }

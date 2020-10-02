@@ -14,9 +14,9 @@ export abstract class AbstractSymbol {
 
     public apply(): DeninjectDecorator {
         return (target: any, propertyKey?: string | symbol) => {
-            this.applyDecorator(target, propertyKey);      
+            this.defineApply(target, propertyKey);      
         };
     }
 
-    protected abstract applyDecorator(target: any, propertyKey?: string | symbol): void;
+    public abstract defineApply(target: any, propertyKey?: string | symbol): void;
 }

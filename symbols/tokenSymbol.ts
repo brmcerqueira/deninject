@@ -10,13 +10,17 @@ export class TokenSymbol extends AbstractSymbol {
         return this._ignoreType;
     }
 
-    protected applyDecorator(target: any, propertyKey?: string | symbol): void {
+    public defineApply(target: any, propertyKey?: string | symbol): void {
         defineToken(target, this.id, propertyKey, this._ignoreType); 
     }
 
+    public defineInject(target: any, propertyKey: string | symbol, parameterIndex: number): void {
+        defineInject(target, propertyKey, parameterIndex, this.id, this._ignoreType);
+    }
+
     public inject(): ParameterDecorator {
-        return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
-            defineInject(target, propertyKey, parameterIndex, this.id, this._ignoreType);
+        return (target: any, propertyKey: string | symbol, parameterIndex: number) => {
+            this.defineInject(target, propertyKey, parameterIndex);
         };
     }
 }
