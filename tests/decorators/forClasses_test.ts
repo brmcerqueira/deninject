@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertNotEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 import { Transient, Scope, Singleton, Token, Inject } from "../../decorators.ts";
-import { getInjectMetadata, IToken, nonModulesMetadata } from "../../reflections/metadata.ts";
+import { getArgumentsMetadata, IToken, nonModulesMetadata } from "../../reflections/metadata.ts";
 import { TokenSymbol } from "../../symbols/tokenSymbol.ts";
 
 const scopeRoot = "__root__";
@@ -64,7 +64,7 @@ Deno.test("classes token decorator", () => {
 });
 
 Deno.test("classes inject decorator", () => {
-    let injectMetadata = getInjectMetadata(E);
+    let injectMetadata = getArgumentsMetadata(E);
     assert(injectMetadata);
     if (injectMetadata) {          
         assertEquals((<IToken>injectMetadata[0])?.id, tokenA);
@@ -72,7 +72,7 @@ Deno.test("classes inject decorator", () => {
 });
 
 Deno.test("classes inject ignoreType decorator", () => {
-    let injectMetadata = getInjectMetadata(G);
+    let injectMetadata = getArgumentsMetadata(G);
     assert(injectMetadata);
     if (injectMetadata) {
         const token = <IToken>injectMetadata[0];

@@ -1,5 +1,5 @@
 import { generateHashCode } from "./generateHashCode.ts";
-import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getInjectMetadata, Identity, root, dynamicToken, IToken } from "./reflections/metadata.ts";
+import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getArgumentsMetadata, Identity, root, dynamicToken, IToken } from "./reflections/metadata.ts";
 import { ScopeSymbol } from "./symbols/scopeSymbol.ts";
 import { TokenSymbol } from "./symbols/tokenSymbol.ts";
 
@@ -86,7 +86,7 @@ class SubInjector {
                         token: getTokenMetadata(module, key),
                         target: target,
                         dependencies: getParamtypesMetadata(module, key),
-                        inject: getInjectMetadata(module, key),
+                        arguments: getArgumentsMetadata(module, key),
                         create(args: any[]): any {
                             let func: Function = module[key];
                             return func.apply(module, args);
@@ -110,8 +110,8 @@ class SubInjector {
         let dependencies: Dependency[] = metadata.dependencies.map((identity, index) => {
             const dependency: Dependency = {};
 
-            if (metadata.inject && metadata.inject[index] && metadata.inject[index] != dynamicToken) {           
-                dependency.token = <IToken>metadata.inject[index];
+            if (metadata.arguments && metadata.arguments[index] && metadata.arguments[index] != dynamicToken) {           
+                dependency.token = <IToken>metadata.arguments[index];
                 dependency.id = this.identityFormat(identity, dependency.token);
             } else {
                 dependency.id = this.getId(identity);

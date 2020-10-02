@@ -25,7 +25,7 @@ export interface IToken {
 
 export type ArgumentMetadataValue = IToken | symbol;
 
-export type InjectMetadata = {
+export type ArgumentsMetadata = {
     [key: number]: ArgumentMetadataValue
 }
 
@@ -35,7 +35,7 @@ export type TypeMetadata = {
     target: Identity<any>,
     create(args: any[]): any, 
     dependencies: Identity<any>[],
-    inject?: InjectMetadata
+    arguments?: ArgumentsMetadata
 }
 
 export const nonModulesMetadata: {                
@@ -76,7 +76,7 @@ export function getSingletonMetadata(target: any, targetKey: string | symbol): b
     return getMetadata(deninjectSingleton, target, targetKey) || false;
 }
 
-export function getInjectMetadata(target: any, targetKey?: string | symbol): InjectMetadata | undefined {
+export function getArgumentsMetadata(target: any, targetKey?: string | symbol): ArgumentsMetadata | undefined {
     return getMetadata(deninjectInject, target, targetKey);
 }
 
@@ -120,16 +120,16 @@ export function defineSingletonMetadata(target: any, targetKey: string | symbol)
     defineMetadata(deninjectSingleton, true, target, targetKey);
 }
 
-export function pushInjectMetadata(target: any, targetKey: string | symbol | undefined, 
-    parameterIndex: number, token: IToken) {
-    let injectMetadata = getInjectMetadata(target, targetKey);
+export function pushArgumentsMetadata(target: any, targetKey: string | symbol | undefined, 
+    parameterIndex: number, value: ArgumentMetadataValue) {
+    let argumentsMetadata = getArgumentsMetadata(target, targetKey);
 
-    if (!injectMetadata) {
-        injectMetadata = {};
-        defineMetadata(deninjectInject, injectMetadata, target, targetKey);
+    if (!argumentsMetadata) {
+        argumentsMetadata = {};
+        defineMetadata(deninjectInject, argumentsMetadata, target, targetKey);
     }
 
-    injectMetadata[parameterIndex] = token;
+    argumentsMetadata[parameterIndex] = value;
 }
 
 export function pushProviderMetadata(target: any, targetKey: string | symbol) {
@@ -163,7 +163,7 @@ export function pushClassMetadata(target: Identity<any>, isSingleton: boolean) {
         token: getMetadata(deninjectToken, target),
         target: target,
         dependencies: getMetadata(designParamtypes, target) || [],
-        inject: getInjectMetadata(target),
+        arguments: getArgumentsMetadata(target),
         create(args: any[]): any {
             let constructor: ObjectConstructor = target.prototype.constructor;
             return new constructor(...args);

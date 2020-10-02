@@ -1,4 +1,4 @@
-import { defineInject, defineToken } from "../decorators.ts";
+import { defineArgument, defineToken } from "../decorators.ts";
 import type { IToken } from "../reflections/metadata.ts";
 import { AbstractSymbol } from "./abstractSymbol.ts";
 
@@ -16,7 +16,7 @@ export class TokenSymbol extends AbstractSymbol implements IToken {
     }
 
     public defineInject(target: any, propertyKey: string | symbol, parameterIndex: number): void {
-        defineInject(target, propertyKey, parameterIndex, this.id, this._ignoreType);
+        defineArgument(target, propertyKey, parameterIndex, this);
     }
 
     public inject(): ParameterDecorator {

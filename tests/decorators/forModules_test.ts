@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertNotEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 import { Singleton, Scope, Transient, Token, Inject } from "../../decorators.ts";
-import { getInjectMetadata, getProviderMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, IToken } from "../../reflections/metadata.ts";
+import { getArgumentsMetadata, getProviderMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, IToken } from "../../reflections/metadata.ts";
 import { TokenSymbol } from "../../symbols/tokenSymbol.ts";
 
 const scopeA = "scopeA";
@@ -76,7 +76,7 @@ Deno.test("modules token decorator", () => {
 
 Deno.test("modules inject decorator", () => {
     const testModule = new TestModule();
-    let injectMetadata = getInjectMetadata(testModule, "buildC");
+    let injectMetadata = getArgumentsMetadata(testModule, "buildC");
     assert(injectMetadata);
     if (injectMetadata) {           
         assertEquals((<IToken>injectMetadata[0])?.id, tokenA);
@@ -85,7 +85,7 @@ Deno.test("modules inject decorator", () => {
 
 Deno.test("modules inject ignoreType decorator", () => {
     const testModule = new TestModule();
-    let injectMetadata = getInjectMetadata(testModule, "buildCTokenB");
+    let injectMetadata = getArgumentsMetadata(testModule, "buildCTokenB");
     assert(injectMetadata);
     if (injectMetadata) {  
         const token = <IToken>injectMetadata[0];

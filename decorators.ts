@@ -1,4 +1,4 @@
-import { defineScopeMetadata, defineClassScopeMetadata, defineTokenMetadata, defineClassTokenMetadata, defineSingletonMetadata, pushProviderMetadata, pushClassMetadata, pushInjectMetadata } from "./reflections/metadata.ts";
+import { defineScopeMetadata, defineClassScopeMetadata, defineTokenMetadata, defineClassTokenMetadata, defineSingletonMetadata, pushProviderMetadata, pushClassMetadata, pushArgumentsMetadata, IToken, dynamicToken } from "./reflections/metadata.ts";
 
 export type DeninjectDecorator = (target: any, propertyKey?: string | symbol) => void;
 
@@ -40,12 +40,12 @@ export function defineTransient(target: any, propertyKey?: string | symbol) {
     }
 }
 
-export function defineInject(target: any, propertyKey: string | symbol, 
-    parameterIndex: number, token: string, ignoreType: boolean = false) {
-    pushInjectMetadata(target, propertyKey, parameterIndex, {
-        ignoreType: ignoreType,
-        id: token
-    });
+export function defineArgument(target: any, propertyKey: string | symbol, parameterIndex: number, value: IToken) {
+    pushArgumentsMetadata(target, propertyKey, parameterIndex, value);
+}
+
+export function defineDynamicToken(target: any, propertyKey: string | symbol, parameterIndex: number) {
+    pushArgumentsMetadata(target, propertyKey, parameterIndex, dynamicToken);
 }
 
 export function Scope(name: string): DeninjectDecorator {
@@ -74,6 +74,15 @@ export function Transient(): DeninjectDecorator {
 
 export function Inject(token: string, ignoreType: boolean = false): ParameterDecorator {
     return (target: any, propertyKey: string | symbol, parameterIndex: number) => {
-        defineInject(target, propertyKey, parameterIndex, token, ignoreType);
+        defineArgument(target, propertyKey, parameterIndex, {
+            id: token,
+            ignoreType: ignoreType
+        });
+    };
+}
+
+export function DynamicToken(): ParameterDecorator {
+    return (target: any, propertyKey: string | symbol, parameterIndex: number) => {
+        defineDynamicToken(target, propertyKey, parameterIndex);
     };
 }
