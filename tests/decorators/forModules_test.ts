@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertNotEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
-import { Singleton, Scope, Transient, Token, Inject } from "../../decorators.ts";
-import { getArgumentsMetadata, getProviderMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, IToken } from "../../reflections/metadata.ts";
+import { Singleton, Scope, Transient, Token, Inject, DynamicToken } from "../../decorators.ts";
+import { dynamicToken, getArgumentsMetadata, getProviderMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, IToken } from "../../reflections/metadata.ts";
 import { TokenSymbol } from "../../symbols/tokenSymbol.ts";
 
 const scopeA = "scopeA";
@@ -49,8 +49,14 @@ class TestModule {
         return new A();
     }
 
+    @Transient()
     public buildCTokenB(@tokenB.inject() a: A): C {
         return new C(a);
+    }
+
+    @Transient()
+    public buildBDynamicToken(@DynamicToken() token: TokenSymbol, a: A): B {
+        return new B(a);
     }
 }
 
@@ -94,6 +100,15 @@ Deno.test("modules inject ignoreType decorator", () => {
     }
 });
 
+Deno.test("modules dynamicToken decorator", () => {
+    const testModule = new TestModule();
+    let injectMetadata = getArgumentsMetadata(testModule, "buildBDynamicToken");
+    assert(injectMetadata);
+    if (injectMetadata) {           
+        assertEquals(injectMetadata[0], dynamicToken);
+    }
+});
+
 Deno.test("modules throws scope decorator", () => {
     assertThrows((): void => {
         class TempModule {
@@ -132,6 +147,18 @@ Deno.test("modules throws token decorator", () => {
             @Token(tokenA)
             @Singleton()         
             public buildA(): A {
+                return new A();
+            }
+        }
+    });
+});
+
+Deno.test("modules throws dynamicToken decorator", () => {
+    assertThrows((): void => {
+        class TempModule {
+            @Transient()
+            @Token(tokenA)                
+            public buildA(@DynamicToken() token: TokenSymbol): A {
                 return new A();
             }
         }

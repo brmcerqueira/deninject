@@ -1,5 +1,5 @@
-import { assert, assertStrictEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
-import { Singleton, Transient, Scope, Token, Inject } from "../decorators.ts";
+import { assert, assertEquals, assertStrictEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
+import { Singleton, Transient, Scope, Token, Inject, DynamicToken } from "../decorators.ts";
 import { Injector } from "../injector.ts";
 import { ScopeSymbol } from "../symbols/scopeSymbol.ts";
 import { TokenSymbol } from "../symbols/tokenSymbol.ts";
@@ -11,6 +11,12 @@ const tokenB = "tokenB";
 const tokenC = new TokenSymbol(true);
 
 abstract class AbstractClass {
+    constructor(public a: A) {
+        
+    }
+}
+
+abstract class DynamicAbstractClass {
     constructor(public a: A) {
         
     }
@@ -35,6 +41,12 @@ class D extends AbstractClass {
 
 class E {
     constructor(public ac: AbstractClass) {
+    }
+}
+
+class F extends AbstractClass {
+    constructor(a: A) {
+        super(a);
     }
 }
 
@@ -72,12 +84,25 @@ class TestModule {
     public buildDtokenC(a: A): AbstractClass {
         return new D(a);
     }
+
+    @Transient()
+    public buildDynamicAbstractClass(@DynamicToken() token: TokenSymbol, a: A): DynamicAbstractClass {
+        assertEquals(token, tokenA);
+        return new F(a);
+    }
 }
 
 Deno.test("injector get", () => {
     const injector = new Injector(new TestModule());
     const ac = injector.get(AbstractClass, tokenA);
     assert(ac instanceof B);
+    assert(ac.a instanceof A);
+});
+
+Deno.test("injector get dynamicToken", () => {
+    const injector = new Injector(new TestModule());
+    const ac = injector.get(DynamicAbstractClass, tokenA);
+    assert(ac instanceof F);
     assert(ac.a instanceof A);
 });
 
@@ -117,11 +142,6 @@ Deno.test("injector throws get", () => {
 
         const injector = new Injector(new TestModule());
         const temp = injector.get(Temp);
-    });
-
-    assertThrows((): void => {
-        const injector = new Injector(new TestModule());
-        const e = injector.get(E, tokenA);
     });
 });
 

@@ -110,9 +110,11 @@ class SubInjector {
         let dependencies: Dependency[] = metadata.dependencies.map((identity, index) => {
             const dependency: Dependency = {};
 
-            if (metadata.arguments && metadata.arguments[index] && metadata.arguments[index] != dynamicToken) {           
-                dependency.token = <IToken>metadata.arguments[index];
-                dependency.id = this.identityFormat(identity, dependency.token);
+            if (metadata.arguments && metadata.arguments[index]) { 
+                if (metadata.arguments[index] != dynamicToken) {
+                    dependency.token = <IToken>metadata.arguments[index];
+                    dependency.id = this.identityFormat(identity, dependency.token);
+                }
             } else {
                 dependency.id = this.getId(identity);
             }
@@ -231,7 +233,11 @@ class SubInjector {
             throw new BindError(<string>(identity ? identity.name : tokenValue));
         }
 
-        let bind = this._binds.__root__[tokenValue ? this.tokenFormat(id, tokenValue) : id];
+        let bind = this._binds.__root__[id];
+
+        if (!bind && tokenValue) {
+            bind = this._binds.__root__[this.tokenFormat(id, tokenValue)];           
+        }
 
         if (!bind) {
             throw new BindError(<string>(identity ? identity.name : tokenValue));
