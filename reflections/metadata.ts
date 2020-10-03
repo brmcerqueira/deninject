@@ -44,16 +44,18 @@ export const nonModulesMetadata: {
     __root__: []
 };
 
-class ScopeError extends Error {
-    constructor(target: Object, value: Object) {
-       super(`Don't use 'Scope(${value.toString()})' before 'Singleton' or 'Transient' in '${target.toString()}'.`);
+function throwErrorIfLock(context: string, target: any, value: Object, targetKey?: string | symbol) {
+    if (getMetadata(deninjectLock, target, targetKey)) {
+        throw new Error(`Don't use '${context}(${value.toString()})' before 'Singleton' or 'Transient' in '${target.toString()}${targetKey ? `-> ${targetKey?.toString()}'` : ""}'.`);
     }
 }
 
-class TokenError extends Error {
-    constructor(target: Object, value: IToken) {
-       super(`Don't use 'Token(${value.toString()})' before 'Singleton' or 'Transient' in '${target.toString()}'.`);
-    }
+function throwScopeErrorIfLock(target: any, value: Object, targetKey?: string | symbol) {
+    throwErrorIfLock("Scope", target, value, targetKey);
+}
+
+function throwTokenErrorIfLock(target: any, value: Object, targetKey?: string | symbol) {
+    throwErrorIfLock("Token", target, value, targetKey);
 }
 
 function throwIfHasDynamicToken(target: any, targetKey?: string | symbol) {
@@ -97,38 +99,24 @@ export function getProviderMetadata(target: any): (string | symbol)[] {
 }
 
 export function defineScopeMetadata(target: any, targetKey: string | symbol, value: string) {
-    if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new ScopeError(targetKey, value);
-    }
-
+    throwScopeErrorIfLock(target, value, targetKey);
     defineMetadata(deninjectScope, value, target, targetKey);
 }
 
 export function defineTokenMetadata(target: any, targetKey: string | symbol, token: IToken) {
     throwIfHasDynamicToken(target, targetKey);
-
-    if (getMetadata(deninjectLock, target, targetKey)) {
-        throw new TokenError(targetKey, token);
-    }
-
+    throwTokenErrorIfLock(target, token, targetKey);
     defineMetadata(deninjectToken, token, target, targetKey);
 }
 
 export function defineClassScopeMetadata(target: Identity<any>, value: string) {
-    if (getMetadata(deninjectLock, target)) {
-        throw new ScopeError(<string>target.name, value);
-    }
-
+    throwScopeErrorIfLock(target, value);
     defineMetadata(deninjectScope, value, target);
 }
 
 export function defineClassTokenMetadata(target: Identity<any>, token: IToken) {
     throwIfHasDynamicToken(target);
-
-    if (getMetadata(deninjectLock, target)) {
-        throw new TokenError(<string>target.name, token);
-    }
-
+    throwTokenErrorIfLock(target, token);
     defineMetadata(deninjectToken, token, target);
 }
 

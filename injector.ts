@@ -22,8 +22,8 @@ type Binds = {
 }
 
 class BindError extends Error {
-    constructor(name: string) {
-       super(`Bind not found for '${name}'.`);
+    constructor(identity: Identity<any> | null, token: Token | null) {
+       super(`Bind not found for '${identity ? identity.name : ""}${token ? `-> ${token?.toString()}'` : ""}'.`);
     }
 }
 
@@ -138,8 +138,8 @@ class SubInjector {
                     else if(!binds[depId]) {
                         binds[depId] = {
                             depth: 0,
-                            get(): any {
-                                throw new BindError(<string>metadata.dependencies[index].name);
+                            get(token: Token | null): any {
+                                throw new BindError(metadata.dependencies[index], token);
                             }
                         }
                     }
@@ -232,7 +232,7 @@ class SubInjector {
         }
 
         if (!id) {
-            throw new BindError(<string>(identity ? identity.name : tokenValue));
+            throw new BindError(identity, token);
         }
 
         let bind: Bind | null = null;
@@ -246,7 +246,7 @@ class SubInjector {
         }
 
         if (!bind) {
-            throw new BindError(<string>(identity ? identity.name : tokenValue));
+            throw new BindError(identity, token);
         }
 
         return bind.get(token);
