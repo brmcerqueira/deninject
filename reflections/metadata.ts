@@ -56,6 +56,18 @@ class TokenError extends Error {
     }
 }
 
+function throwIfHasDynamicToken(target: any, targetKey?: string | symbol) {
+    const argumentsMetadata = getArgumentsMetadata(target, targetKey);
+
+    if (argumentsMetadata) {
+        for (const key in argumentsMetadata) {
+            if (argumentsMetadata[key] === dynamicToken) {
+                throw new Error(`Don't use 'DynamicToken' with 'Token' in '${targetKey ? targetKey.toString() : target.name}'.`);
+            }
+        }       
+    }
+}
+
 export function getParamtypesMetadata(target: any, targetKey: string | symbol): Identity<any>[] {
     return getMetadata(designParamtypes, target, targetKey) || [];
 }
@@ -93,6 +105,8 @@ export function defineScopeMetadata(target: any, targetKey: string | symbol, val
 }
 
 export function defineTokenMetadata(target: any, targetKey: string | symbol, token: IToken) {
+    throwIfHasDynamicToken(target, targetKey);
+
     if (getMetadata(deninjectLock, target, targetKey)) {
         throw new TokenError(targetKey, token);
     }
@@ -109,6 +123,8 @@ export function defineClassScopeMetadata(target: Identity<any>, value: string) {
 }
 
 export function defineClassTokenMetadata(target: Identity<any>, token: IToken) {
+    throwIfHasDynamicToken(target);
+
     if (getMetadata(deninjectLock, target)) {
         throw new TokenError(<string>target.name, token);
     }
@@ -133,10 +149,6 @@ export function pushArgumentsMetadata(target: any, targetKey: string | symbol | 
 }
 
 export function pushDynamicToken(target: any, targetKey: string | symbol | undefined, parameterIndex: number) {
-    if (getMetadata(deninjectToken, target, targetKey)) {
-        throw new Error(`Don't use 'DynamicToken' with 'Token' in '${targetKey ? targetKey.toString() : target.name}'.`);
-    }
-
     pushArgumentsMetadata(target, targetKey, parameterIndex, dynamicToken);
 }
 

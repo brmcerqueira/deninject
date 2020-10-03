@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertNotEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
-import { Transient, Scope, Singleton, Token, Inject } from "../../decorators.ts";
-import { getArgumentsMetadata, IToken, nonModulesMetadata } from "../../reflections/metadata.ts";
+import { Transient, Scope, Singleton, Token, Inject, DynamicToken } from "../../decorators.ts";
+import { dynamicToken, getArgumentsMetadata, IToken, nonModulesMetadata } from "../../reflections/metadata.ts";
 import { TokenSymbol } from "../../symbols/tokenSymbol.ts";
 
 const scopeRoot = "__root__";
@@ -36,6 +36,13 @@ class F {}
 @Transient()
 class G {
     constructor(@tokenB.inject() f: F) {
+    }
+}
+
+@Transient()
+class H {
+    constructor(@DynamicToken() token: TokenSymbol) {
+  
     }
 }
 
@@ -81,6 +88,14 @@ Deno.test("classes inject ignoreType decorator", () => {
     }
 });
 
+Deno.test("classes dynamicToken decorator", () => {
+    let injectMetadata = getArgumentsMetadata(H);
+    assert(injectMetadata);
+    if (injectMetadata) {          
+        assertEquals(injectMetadata[0], dynamicToken);
+    }
+});
+
 Deno.test("classes throws scope decorator", () => {
     assertThrows((): void => {
         @Scope(scopeA)
@@ -106,5 +121,16 @@ Deno.test("classes throws token decorator", () => {
         @Token(tokenA)
         @Singleton()
         class Temp {}
+    });
+});
+
+Deno.test("classes throws dynamicToken decorator", () => {
+    assertThrows((): void => {
+        @Transient()
+        @Token(tokenA)     
+        class Temp {
+            constructor(@DynamicToken() token: TokenSymbol) {
+            }
+        }
     });
 });
