@@ -12,11 +12,13 @@ type Dependency = {
     token?: IToken 
 }
 
+type Bind = {
+    depth: number,
+    get(token: Token | null): any
+}
+
 type Binds = {
-    [key: string]: {
-        depth: number,
-        get(token: Token | null): any
-    }
+    [key: string]: Bind
 }
 
 class BindError extends Error {
@@ -233,10 +235,14 @@ class SubInjector {
             throw new BindError(<string>(identity ? identity.name : tokenValue));
         }
 
-        let bind = this._binds.__root__[id];
+        let bind: Bind | null = null;
 
-        if (!bind && tokenValue) {
+        if (tokenValue) {
             bind = this._binds.__root__[this.tokenFormat(id, tokenValue)];           
+        }
+
+        if (!bind) {
+            bind = this._binds.__root__[id];           
         }
 
         if (!bind) {
