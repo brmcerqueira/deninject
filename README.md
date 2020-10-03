@@ -11,6 +11,8 @@ Available at Deno Land: [Deninject](https://deno.land/x/deninject)
   - [Singleton](#singleton)
   - [Scope](#scope)
   - [Token](#token)
+    - [Inject](#inject)
+    - [Dynamic Token](#dynamic-token)
 - [Symbols](#symbols)
   - [Scope Symbol](#scope-symbol)
   - [Token Symbol](#token-symbol)  
@@ -158,10 +160,43 @@ To retrieve an instance:
 const a = injector.get(ClassA, "tokenA");
 ```
 
-To inject a specific instance using a token:
+#### Inject
+
+To inject a specific instance using a token.
+
 ```ts
 class ClassB {
     constructor(@Inject("tokenA", true /*If you want use ignoreType*/) a: ClassA) {}
+}
+```
+
+#### Dynamic Token
+
+From time to time we need to make a more elaborate logic when instantiating classes, for this purpose `DynamicToken` was made, to provide more freedom in the code. Here is an example:
+
+```ts
+const tokenB = new TokenSymbol();
+const tokenC = new TokenSymbol();
+
+class ClassA {}
+
+class ClassB extends ClassA {}
+
+class ClassC extends ClassA {}
+
+class MyModule {
+    @Transient()
+    public buildA(@DynamicToken() token: TokenSymbol): ClassA {
+        if (token == tokenB) {
+            return new ClassB();
+        }
+        else if (token == tokenC) {
+            return new ClassC();
+        }
+        else {
+            return new ClassA();
+        }
+    }
 }
 ```
 
