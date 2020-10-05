@@ -1,11 +1,11 @@
+import { v4 } from "https://deno.land/std/uuid/mod.ts";
 import type { DeninjectDecorator } from "../decorators.ts";
-import { generateHashCode } from "../generateHashCode.ts";
 
 export abstract class AbstractSymbol {
     private _id: string;
 
     constructor() {
-        this._id = generateHashCode();
+        this._id = v4.generate();
     }
 
     public get id(): string {

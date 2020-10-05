@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStrictEquals, assertThrows } from "https://deno.land/std/testing/asserts.ts";
-import { Singleton, Transient, Scope, Token, Inject, DynamicToken } from "../decorators.ts";
+import { Singleton, Transient, Token, Inject, DynamicToken } from "../decorators.ts";
 import { Injector } from "../injector.ts";
 import { ScopeSymbol } from "../symbols/scopeSymbol.ts";
 import { TokenSymbol } from "../symbols/tokenSymbol.ts";

@@ -1,4 +1,4 @@
-import { generateHashCode } from "./generateHashCode.ts";
+import { v4 } from "https://deno.land/std/uuid/mod.ts";
 import { nonModulesMetadata, getParamtypesMetadata, getProviderMetadata, getReturntypeMetadata, getScopeMetadata, getSingletonMetadata, getTokenMetadata, TypeMetadata, getArgumentsMetadata, Identity, root, dynamicToken, IToken } from "./reflections/metadata.ts";
 import { ScopeSymbol } from "./symbols/scopeSymbol.ts";
 import { TokenSymbol } from "./symbols/tokenSymbol.ts";
@@ -196,7 +196,7 @@ class SubInjector {
         let deninjectId = identity.__deninjectId__;
 
         if (!deninjectId) {
-            deninjectId = generateHashCode();
+            deninjectId = v4.generate();
             identity.__deninjectId__ = deninjectId;
         }
 
