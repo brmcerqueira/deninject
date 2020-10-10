@@ -160,7 +160,9 @@ export function pushClassMetadata(target: Identity<any>, isSingleton: boolean) {
     let scope: string | undefined = getMetadata(deninjectScope, target);
 
     if (scope) {
-        nonModulesMetadata[scope] = [];
+        if (!nonModulesMetadata[scope]) {
+            nonModulesMetadata[scope] = [];
+        }    
     }
     else {
         scope = root;
