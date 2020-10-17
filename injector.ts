@@ -8,7 +8,8 @@ const anything = "anything";
 type Token = string | TokenSymbol;
 
 type Dependency = { 
-    id?: string, 
+    id?: string,
+    targetId?: string, 
     token?: IToken 
 }
 
@@ -103,7 +104,7 @@ class SubInjector {
         let id = "";
 
         if (metadata.token) {
-            id = this.identityFormat(metadata.target, metadata.token);
+            id = this.tokenFormat(metadata.token.ignoreType ? anything : this.getId(metadata.target), metadata.token.id);
         }
         else {
             id = this.getId(metadata.target);
@@ -115,10 +116,12 @@ class SubInjector {
             if (metadata.arguments && metadata.arguments[index]) { 
                 if (metadata.arguments[index] != dynamicToken) {
                     dependency.token = <IToken>metadata.arguments[index];
-                    dependency.id = this.identityFormat(identity, dependency.token);
+                    dependency.targetId = this.getId(identity);
+                    dependency.id = this.tokenFormat(dependency.token.ignoreType ? anything : dependency.targetId, dependency.token.id);
                 }
             } else {
-                dependency.id = this.getId(identity);
+                dependency.targetId = this.getId(identity);
+                dependency.id = dependency.targetId;
             }
 
             return dependency;
@@ -136,11 +139,19 @@ class SubInjector {
                         binds[depId] = bindsRoot[depId]; 
                     }
                     else if(!binds[depId]) {
+                        function getDefault(token: Token | null): any {
+                            throw new BindError(metadata.dependencies[index], token);
+                        } 
+
                         binds[depId] = {
                             depth: 0,
-                            get: dep.token && binds[dep.token?.id] ? binds[dep.token?.id].get : function(token: Token | null): any {
-                                throw new BindError(metadata.dependencies[index], token);
-                            }
+                            get: dep.token ? function(token: Token | null): any {
+                                if (dep.targetId && binds[dep.targetId]) {
+                                    return binds[dep.targetId].get(token);
+                                }
+
+                                return getDefault(token);
+                            } : getDefault
                         }
                     }
                 }
@@ -182,10 +193,6 @@ class SubInjector {
                 } : resolve
             }
         }
-    }
-
-    private identityFormat(identity: Identity<any>, token: IToken): string {
-        return this.tokenFormat(token.ignoreType ? anything : this.getId(identity), token.id);
     }
 
     private tokenFormat(id: string, token: string): string {
