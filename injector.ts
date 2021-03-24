@@ -28,7 +28,13 @@ class BindError extends Error {
     }
 }
 
-class SubInjector {
+export interface IInjector {
+    get<T>(identity: Identity<T>, token?: Token): T
+    getByToken(token: Token): any
+    sub(scope: string | ScopeSymbol, ...modules: any[]): IInjector
+}
+
+class SubInjector implements IInjector {
     private _depth: number = 1;
 
     private _cache: {                
@@ -259,7 +265,7 @@ class SubInjector {
         return bind.get(token);
     }
 
-    public sub(scope: string | ScopeSymbol, ...modules: any[]): SubInjector {
+    public sub(scope: string | ScopeSymbol, ...modules: any[]): IInjector {
         return new SubInjector(scope instanceof ScopeSymbol ? scope.id : scope, this, modules);
     }
 }
